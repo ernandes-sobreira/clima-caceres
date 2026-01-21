@@ -1,0 +1,1618 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PLAC Cáceres — Painel Climático Interativo</title>
+
+  <!-- Plotly + PapaParse -->
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#fff5f7;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --line:#f1c0cc;
+      --shadow:0 14px 36px rgba(190,18,60,.12);
+
+      --brand:#be123c;          /* vinho */
+      --brand2:#ef4444;         /* vermelho */
+      --brand3:#fb7185;         /* rosa */
+      --brand4:#fecdd3;         /* rosa claro */
+      --good:#16a34a;
+      --warn:#f59e0b;
+      --bad:#dc2626;
+
+      --r:18px;
+      --r2:14px;
+      --pad:14px;
+      --pad2:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--text); background:
+        radial-gradient(1200px 500px at 10% 0%, rgba(239,68,68,.22), transparent 55%),
+        radial-gradient(900px 600px at 95% 0%, rgba(251,113,133,.28), transparent 55%),
+        linear-gradient(180deg, #fff, var(--bg));
+      min-height:100vh;
+    }
+
+    header{
+      position:sticky; top:0; z-index:30;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.72);
+      border-bottom:1px solid rgba(190,18,60,.18);
+    }
+    .wrap{max-width:1240px; margin:0 auto; padding:14px 16px;}
+    .topbar{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .brand{
+      display:flex; gap:12px; align-items:center;
+    }
+    .logo{
+      width:42px; height:42px; border-radius:14px;
+      background: conic-gradient(from 200deg, var(--brand), var(--brand2), var(--brand3), var(--brand));
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(190,18,60,.25);
+    }
+    h1{font-size:16px; margin:0}
+    .sub{color:var(--muted); font-size:12px; margin-top:2px}
+    .pills{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .pill{
+      padding:8px 10px; border-radius:999px;
+      background: rgba(190,18,60,.08);
+      border:1px solid rgba(190,18,60,.18);
+      color: var(--brand);
+      font-size:12px; font-weight:650;
+      display:flex; gap:8px; align-items:center;
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--brand2)}
+    .btn{
+      appearance:none; border:none; cursor:pointer;
+      padding:10px 12px; border-radius:12px;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color:#fff; font-weight:750;
+      box-shadow: 0 10px 24px rgba(190,18,60,.22);
+      display:inline-flex; align-items:center; gap:8px;
+      transition: transform .08s ease, filter .08s ease;
+    }
+    .btn:active{transform:translateY(1px); filter:brightness(.96)}
+    .btn.ghost{
+      background: rgba(255,255,255,.72);
+      color: var(--brand);
+      border:1px solid rgba(190,18,60,.22);
+      box-shadow:none;
+      font-weight:700;
+    }
+    .btn.small{padding:8px 10px; border-radius:10px; font-size:12px}
+    .btn.warn{background: linear-gradient(135deg, #b45309, #f59e0b)}
+    .btn.good{background: linear-gradient(135deg, #047857, #16a34a)}
+    .btn.gray{background: rgba(31,41,55,.08); color:var(--text); box-shadow:none; border:1px solid rgba(31,41,55,.10)}
+    input[type="file"]{display:none}
+
+    .grid{
+      display:grid; grid-template-columns: 360px 1fr;
+      gap:14px; padding:18px 16px 28px;
+      max-width:1240px; margin:0 auto;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns: 1fr}
+    }
+
+    .card{
+      background: rgba(255,255,255,.88);
+      border: 1px solid rgba(190,18,60,.16);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+    }
+    .card .hd{
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid rgba(190,18,60,.12);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    }
+    .card .hd h2{font-size:14px; margin:0}
+    .card .hd .hint{color:var(--muted); font-size:12px; margin-top:4px; line-height:1.2}
+    .card .bd{padding: 12px 14px 14px;}
+    .section{margin-bottom:12px}
+    .section:last-child{margin-bottom:0}
+
+    label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px}
+    select, input[type="date"], input[type="number"], input[type="text"]{
+      width:100%;
+      padding:10px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(190,18,60,.18);
+      background: rgba(255,255,255,.92);
+      outline: none;
+      font-size: 13px;
+    }
+    select:focus, input:focus{
+      border-color: rgba(190,18,60,.55);
+      box-shadow: 0 0 0 4px rgba(251,113,133,.22);
+    }
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+    .chips{display:flex; flex-wrap:wrap; gap:8px}
+    .chip{
+      padding:8px 10px; border-radius:999px;
+      border:1px solid rgba(190,18,60,.18);
+      background: rgba(251,113,133,.12);
+      color: var(--brand);
+      font-weight:700;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip.off{
+      background: rgba(31,41,55,.06);
+      border-color: rgba(31,41,55,.10);
+      color: rgba(31,41,55,.7);
+      font-weight:650;
+    }
+
+    .kpis{
+      display:grid; grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+    }
+    .kpi{
+      border-radius: 16px;
+      border: 1px solid rgba(190,18,60,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,245,247,.80));
+      padding:12px;
+    }
+    .kpi .t{color:var(--muted); font-size:12px}
+    .kpi .v{font-weight:850; font-size:18px; margin-top:4px}
+    .kpi .s{color:var(--muted); font-size:12px; margin-top:2px}
+
+    .note{
+      border-radius: 14px;
+      border: 1px dashed rgba(190,18,60,.28);
+      background: rgba(254,205,211,.18);
+      padding: 10px 12px;
+      font-size:12px; color: rgba(31,41,55,.85);
+      line-height:1.35;
+    }
+    .mono{font-family:var(--mono)}
+    .small{font-size:12px;color:var(--muted)}
+    .split{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .split > *{flex: 1 1 auto}
+    .divider{height:1px; background: rgba(190,18,60,.12); margin:12px 0}
+
+    .tabs{
+      display:flex; gap:8px; flex-wrap:wrap;
+      padding: 10px 12px 0;
+    }
+    .tab{
+      padding:10px 12px; border-radius: 999px;
+      border:1px solid rgba(190,18,60,.18);
+      background: rgba(255,255,255,.9);
+      cursor:pointer;
+      font-weight:750;
+      font-size:12px;
+      color: rgba(190,18,60,.92);
+      user-select:none;
+    }
+    .tab.active{
+      background: linear-gradient(135deg, rgba(190,18,60,.14), rgba(251,113,133,.22));
+      border-color: rgba(190,18,60,.28);
+    }
+
+    .plotCard{padding: 12px 12px 14px}
+    .plot{width:100%; height:420px}
+    @media (max-width:980px){ .plot{height:380px} }
+
+    .table{
+      width:100%; border-collapse: collapse; font-size:12px;
+      overflow:hidden; border-radius: 14px;
+      border: 1px solid rgba(190,18,60,.14);
+      background: rgba(255,255,255,.9);
+    }
+    .table th, .table td{padding:10px 10px; border-bottom:1px solid rgba(190,18,60,.10); text-align:left}
+    .table th{background: rgba(190,18,60,.06); color: rgba(190,18,60,.92); font-size:12px}
+    .table tr:last-child td{border-bottom:none}
+
+    .footer{
+      max-width:1240px; margin:0 auto; padding: 0 16px 18px;
+      color:var(--muted); font-size:12px;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px;
+      border:1px solid rgba(190,18,60,.18);
+      background: rgba(255,255,255,.85);
+      margin-right:8px;
+    }
+
+    .hide{display:none}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>PLAC Cáceres — Painel Climático Interativo</h1>
+          <div class="sub">Dados diários (ERA5‑Land via GEE) • estatística, tendências, comparações e download</div>
+        </div>
+      </div>
+
+      <div class="pills">
+        <div class="pill"><span class="dot"></span><span id="pillCity">Cáceres‑MT</span></div>
+        <div class="pill"><span class="dot" style="background:var(--brand3)"></span><span id="pillPeriod">Carregando…</span></div>
+        <button class="btn ghost" id="btnHelp" title="O que este painel faz?">Guia rápido</button>
+        <button class="btn" id="btnExportPNG" title="Salvar imagem do gráfico atual">Salvar gráfico (PNG)</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="grid">
+  <!-- LEFT: Controls -->
+  <div class="card">
+    <div class="hd">
+      <div>
+        <h2>1) Escolha o que analisar</h2>
+        <div class="hint">Você controla variável, período, agregação e comparação. A estatística é recalculada automaticamente.</div>
+      </div>
+      <button class="btn small gray" id="btnReset">Reset</button>
+    </div>
+
+    <div class="bd">
+      <div class="section">
+        <label>Municípios (comparação até 5)</label>
+        <div class="split">
+          <select id="selCities" multiple size="4" title="Ctrl/Shift para selecionar mais de um"></select>
+          <div style="display:flex; gap:8px; flex-direction:column; min-width:150px">
+            <label for="fileCity" class="btn small ghost" style="justify-content:center">Adicionar município</label>
+            <input id="fileCity" type="file" accept=".csv" />
+            <button class="btn small warn" id="btnRemoveCity">Remover selecionado</button>
+          </div>
+        </div>
+        <div class="small" style="margin-top:8px">
+          Dica: para comparar outros municípios, exporte do GEE com a <b>mesma estrutura</b> e carregue aqui.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <label>Variável principal</label>
+        <select id="selVar"></select>
+        <div class="small" id="varUnit" style="margin-top:6px"></div>
+      </div>
+
+      <div class="section row">
+        <div>
+          <label>Agregação temporal</label>
+          <select id="selAgg">
+            <option value="daily">Diário</option>
+            <option value="monthly">Mensal</option>
+            <option value="annual">Anual</option>
+          </select>
+        </div>
+        <div>
+          <label>Como resumir no período</label>
+          <select id="selReducer">
+            <option value="auto">Auto (recomendado)</option>
+            <option value="mean">Média</option>
+            <option value="sum">Soma</option>
+            <option value="min">Mínimo</option>
+            <option value="max">Máximo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section row">
+        <div>
+          <label>Início</label>
+          <input type="date" id="dateStart" />
+        </div>
+        <div>
+          <label>Fim</label>
+          <input type="date" id="dateEnd" />
+        </div>
+      </div>
+
+      <div class="section">
+        <label>Filtros rápidos</label>
+        <div class="chips">
+          <div class="chip" id="chipHideSnow">Ocultar neve/gelo</div>
+          <div class="chip off" id="chipShowDerived">Incluir variáveis derivadas (RH, vento)</div>
+          <div class="chip off" id="chipSeason">Comparar estação seca × chuvosa</div>
+        </div>
+        <div class="small" style="margin-top:8px">
+          Estação seca/chuvosa: o painel usa um critério <b>data‑driven</b> baseado na precipitação mensal (limiar por quantil), ajustável no guia.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <label>2) Comparação entre variáveis</label>
+        <div class="row">
+          <div>
+            <label>Variável X</label>
+            <select id="selX"></select>
+          </div>
+          <div>
+            <label>Variável Y</label>
+            <select id="selY"></select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Defasagem (lags) para Y</label>
+            <select id="selLag">
+              <option value="0">0 (mesma data)</option>
+              <option value="1">+1 período (Y atrasada)</option>
+              <option value="2">+2 períodos</option>
+              <option value="3">+3 períodos</option>
+              <option value="6">+6 períodos</option>
+              <option value="12">+12 períodos</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:8px; align-items:flex-end">
+            <button class="btn small good" id="btnRecalc">Recalcular</button>
+            <button class="btn small ghost" id="btnDownload">Baixar dados (CSV)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <h3 style="margin:0 0 8px; font-size:13px; color:rgba(190,18,60,.95)">O que significa a variável?</h3>
+        <div class="note" id="varInfo">Carregando descrições…</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <h3 style="margin:0 0 8px; font-size:13px; color:rgba(190,18,60,.95)">Resumo estatístico do período</h3>
+        <div class="kpis">
+          <div class="kpi"><div class="t">Média</div><div class="v" id="kpiMean">—</div><div class="s" id="kpiMean2"> </div></div>
+          <div class="kpi"><div class="t">Mínimo</div><div class="v" id="kpiMin">—</div><div class="s" id="kpiMin2"> </div></div>
+          <div class="kpi"><div class="t">Máximo</div><div class="v" id="kpiMax">—</div><div class="s" id="kpiMax2"> </div></div>
+        </div>
+        <div class="small" id="kpiN" style="margin-top:8px"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <h3 style="margin:0 0 8px; font-size:13px; color:rgba(190,18,60,.95)">Tendência (robusta)</h3>
+        <div class="note" id="trendBox">
+          Calculando… (Mann‑Kendall + Sen’s slope)
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: Plots -->
+  <div class="card">
+    <div class="hd" style="align-items:flex-end">
+      <div>
+        <h2>3) Visualizações e resultados</h2>
+        <div class="hint">Linhas, barras, boxplots e dispersão — com estatística clara e exportável.</div>
+      </div>
+      <div class="split" style="justify-content:flex-end">
+        <button class="btn small ghost" id="btnExportData">Exportar seleção (CSV)</button>
+        <button class="btn small" id="btnExportReport">Baixar relatório (HTML)</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="t1">Série temporal</div>
+      <div class="tab" data-tab="t2">Boxplot (meses)</div>
+      <div class="tab" data-tab="t3">Sazonal (seca × chuva)</div>
+      <div class="tab" data-tab="t4">Dispersão + regressão</div>
+      <div class="tab" data-tab="t5">Tabela</div>
+    </div>
+
+    <div class="plotCard">
+      <div id="tab-t1" class="tabPane">
+        <div id="plotTS" class="plot"></div>
+      </div>
+      <div id="tab-t2" class="tabPane hide">
+        <div id="plotBox" class="plot"></div>
+      </div>
+      <div id="tab-t3" class="tabPane hide">
+        <div id="plotSeason" class="plot"></div>
+      </div>
+      <div id="tab-t4" class="tabPane hide">
+        <div id="plotScatter" class="plot"></div>
+        <div class="note" id="scatterStats" style="margin-top:10px">—</div>
+      </div>
+      <div id="tab-t5" class="tabPane hide">
+        <div class="note" style="margin-bottom:10px">
+          A tabela abaixo é a <b>série agregada</b> (diária/mensal/anual) já convertida para unidades legíveis.
+        </div>
+        <div style="overflow:auto; max-height:520px">
+          <table class="table" id="tbl">
+            <thead><tr id="tblHead"></tr></thead>
+            <tbody id="tblBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">
+  <div class="badge">📌 <b>Transparência</b>: tudo é calculado no seu navegador (sem servidor).</div>
+  <div class="badge">🧪 <b>Estatística</b>: MK + Sen, correlação (Pearson/Spearman), regressão OLS.</div>
+  <div class="badge">🧭 <b>Política pública</b>: o objetivo é apoiar decisões do PLAC com evidência local.</div>
+  <div style="margin-top:8px">
+    Fonte: ERA5‑Land (Copernicus/ECMWF) via Google Earth Engine. Use este painel como apoio; para publicações, descreva método e agregação.
+  </div>
+</div>
+
+<!-- Modal: Quick Guide -->
+<div id="modal" class="hide" style="position:fixed; inset:0; background:rgba(17,24,39,.55); z-index:50; padding:18px;">
+  <div class="card" style="max-width:920px; margin:40px auto; overflow:hidden">
+    <div class="hd">
+      <div>
+        <h2>Guia rápido (2 minutos)</h2>
+        <div class="hint">Como usar o painel para comunicar mudança climática e apoiar o PLAC.</div>
+      </div>
+      <button class="btn small gray" id="btnClose">Fechar</button>
+    </div>
+    <div class="bd" style="line-height:1.45; font-size:13px">
+      <ol style="margin:0; padding-left:18px">
+        <li><b>Escolha a variável principal</b> (ex.: temperatura do ar a 2m). O painel converte unidades para leitura (°C, mm, hPa…).</li>
+        <li><b>Defina agregação</b> (diária/mensal/anual). Para chuva use “Soma” (mensal/anual) — ou deixe em Auto.</li>
+        <li><b>Tendência</b>: o bloco “Mann‑Kendall + Sen” mostra se a série tem tendência significativa e qual a taxa (ex.: °C/década).</li>
+        <li><b>Boxplot por meses</b>: excelente para mostrar como os extremos estão mudando (e quais meses aquecem mais).</li>
+        <li><b>Seca × Chuva</b>: ativa a comparação sazonal e exibe diferenças + efeito (útil para planejamento urbano).</li>
+        <li><b>Comparação entre variáveis</b>: escolha X e Y (ex.: temperatura × precipitação), aplique defasagem e veja correlação/regressão.</li>
+        <li><b>Comparar municípios</b>: carregue CSVs de outros locais (mesma estrutura do GEE) e compare até 5.</li>
+        <li><b>Transparência</b>: exporte os dados filtrados e salve as figuras em PNG para relatórios e audiências públicas.</li>
+      </ol>
+      <div class="divider"></div>
+      <div class="note">
+        Critério de estação seca/chuvosa (padrão): com base na precipitação mensal local, usando quantil 0,35 para separar meses mais secos.
+        Você pode editar esse limiar no código (<span class="mono">SEASON_Q</span>) se desejar.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================
+   Config + Helpers
+=========================== */
+const DATA_URL = "data/caceres_era5land_daily.csv";
+const MAX_CITIES = 5;
+const DEFAULT_CITY = "Cáceres-MT";
+
+/** Ajuste o quantil para definir “seca” (meses com precip <= quantil). */
+const SEASON_Q = 0.35;
+
+const EXCLUDE_KEYS = new Set(["system:index","date","year","doy",".geo"]);
+const SNOW_RE = /(snow|ice)/i;
+
+const state = {
+  datasets: {},          // { cityName: {rawRows, cols, dateMin, dateMax} }
+  showSnow: false,
+  showDerived: false,
+  compareSeason: false,
+  activeTab: "t1",
+  lastPlotId: "plotTS",
+};
+
+function fmt(n, digits=2){
+  if(!isFinite(n)) return "—";
+  const abs = Math.abs(n);
+  if(abs >= 1e6) return n.toExponential(2);
+  return n.toLocaleString("pt-BR",{maximumFractionDigits:digits});
+}
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+function parseDate(s){ return new Date(s + "T00:00:00"); }
+function isoDate(d){
+  const z = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return z.toISOString().slice(0,10);
+}
+function monthKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; }
+function yearKey(d){ return `${d.getFullYear()}`; }
+
+function niceLabel(col){
+  const map = VAR_META[col]?.label;
+  if(map) return map;
+  return col.replaceAll("_"," ").replace(/\b\w/g, m=>m.toUpperCase());
+}
+
+/* ===========================
+   Variable Metadata (core)
+   - label, unit, transform, description, relevance
+=========================== */
+const VAR_META = {
+  "temperature_2m": {
+    label: "Temperatura do ar (2 m)",
+    unit: "°C (média diária)",
+    transform: v => v - 273.15,
+    description: "Temperatura do ar a 2 metros do solo. É a variável mais direta para discutir aquecimento local, conforto térmico e risco de extremos de calor.",
+    relevance: "Aumentos sustentados elevam estresse térmico, agravam ilhas de calor urbano e podem aumentar mortalidade e demanda por energia."
+  },
+  "temperature_2m_max": {
+    label: "Temperatura máxima do ar (2 m)",
+    unit: "°C (máxima diária)",
+    transform: v => v - 273.15,
+    description: "Maior temperatura do dia. É ótima para comunicar ondas de calor e risco à saúde.",
+    relevance: "Tende a subir mais rápido em cenários de aquecimento; orienta protocolos de alerta e adaptação (sombras, horários, hidratação)."
+  },
+  "temperature_2m_min": {
+    label: "Temperatura mínima do ar (2 m)",
+    unit: "°C (mínima diária)",
+    transform: v => v - 273.15,
+    description: "Menor temperatura do dia. Mudanças aqui indicam noites mais quentes (menos alívio térmico).",
+    relevance: "Noites quentes aumentam fadiga térmica, reduzem recuperação fisiológica e elevam consumo de energia."
+  },
+  "dewpoint_temperature_2m": {
+    label: "Temperatura de ponto de orvalho (2 m)",
+    unit: "°C (média diária)",
+    transform: v => v - 273.15,
+    description: "Indica o conteúdo de vapor d'água no ar. Quanto maior, mais úmido e mais difícil o corpo resfriar por evaporação do suor.",
+    relevance: "Combinada com temperatura, ajuda a avaliar desconforto térmico e risco de heat stress."
+  },
+  "total_precipitation_sum": {
+    label: "Precipitação total",
+    unit: "mm (acumulado diário)",
+    transform: v => v * 1000,
+    description: "Chuva acumulada no dia. Em agregações mensais/anuais, use soma para obter o total do período.",
+    relevance: "Sustenta abastecimento, agricultura e ecossistemas; mudanças alteram risco de enchentes, estiagens e disponibilidade hídrica."
+  },
+  "surface_pressure": {
+    label: "Pressão na superfície",
+    unit: "hPa",
+    transform: v => v / 100,
+    description: "Pressão atmosférica ao nível da superfície. Relaciona-se à circulação e padrões de tempo (frentes, estabilidade).",
+    relevance: "Apoia leitura sinótica e interpretações sobre estabilidade/instabilidade atmosférica."
+  },
+  "u_component_of_wind_10m": {
+    label: "Vento (10 m) — componente U",
+    unit: "m/s",
+    transform: v => v,
+    description: "Componente zonal do vento a 10 m (oeste↔leste). Sinal indica direção predominante.",
+    relevance: "Ventos modulam conforto térmico, dispersão de poluentes e propagação de fogo."
+  },
+  "v_component_of_wind_10m": {
+    label: "Vento (10 m) — componente V",
+    unit: "m/s",
+    transform: v => v,
+    description: "Componente meridional do vento a 10 m (sul↔norte).",
+    relevance: "Ventos fortes aumentam risco de fogo e afetam transporte de umidade."
+  },
+  "surface_net_solar_radiation_sum": {
+    label: "Radiação solar líquida na superfície",
+    unit: "MJ/m² (acumulado diário)",
+    transform: v => v / 1e6,
+    description: "Energia solar líquida acumulada no dia. É um motor fundamental do balanço de energia e da evapotranspiração.",
+    relevance: "Maior radiação favorece aquecimento, secagem do solo e pode aumentar risco de fogo em períodos críticos."
+  }
+};
+
+// Auto rules for many columns (units + conversion)
+function autoMeta(col){
+  // if explicit meta exists:
+  if(VAR_META[col]) return VAR_META[col];
+
+  const lower = col.toLowerCase();
+  let unit = "";
+  let transform = (v)=>v;
+  if(lower.includes("temperature")){ unit = "°C"; transform = v=>v-273.15; }
+  else if(lower.includes("precipitation") || lower.includes("rain") || lower.includes("evaporation") || lower.includes("runoff") || lower.includes("snowfall") || lower.includes("snowmelt")){
+    unit = "mm"; transform = v=>v*1000;
+  } else if(lower.includes("pressure")){ unit="hPa"; transform=v=>v/100; }
+  else if(lower.includes("radiation")){ unit="MJ/m²"; transform=v=>v/1e6; }
+  else if(lower.includes("volumetric_soil_water")){ unit="m³/m³"; transform=v=>v; }
+  else if(lower.includes("soil_temperature")){ unit="°C"; transform=v=>v-273.15; }
+  else if(lower.includes("wind")){ unit="m/s"; transform=v=>v; }
+  else if(lower.includes("albedo")){ unit="(0–1)"; transform=v=>v; }
+  else if(lower.includes("leaf_area_index")){ unit="m²/m²"; transform=v=>v; }
+  else if(lower.includes("snow")||lower.includes("ice")){ unit="(ver unidade original)"; transform=v=>v; }
+  else { unit="(unid.)"; transform=v=>v; }
+
+  // Summaries
+  let aggHint = "";
+  if(lower.endsWith("_sum")) aggHint = " (acumulado)";
+  if(lower.endsWith("_max")) aggHint = " (máximo)";
+  if(lower.endsWith("_min")) aggHint = " (mínimo)";
+
+  return {
+    label: niceLabel(col),
+    unit: unit + aggHint,
+    transform,
+    description: "Variável do ERA5‑Land exportada via GEE. Veja o nome técnico no CSV para detalhes.",
+    relevance: "Use em conjunto com temperatura/chuva/umidade para interpretar impactos climáticos e ambientais."
+  };
+}
+
+function getMeta(col){ return autoMeta(col); }
+function convert(col, v){
+  if(v==null || v==="" || !isFinite(v)) return null;
+  const m = getMeta(col);
+  return m.transform(Number(v));
+}
+function getUnit(col){ return getMeta(col).unit; }
+
+/* ===========================
+   Derived variables
+=========================== */
+function addDerived(rows){
+  // Requires temperature_2m and dewpoint_temperature_2m for RH
+  return rows.map(r=>{
+    const out = {...r};
+    const tK = toNum(r["temperature_2m"]);
+    const tdK = toNum(r["dewpoint_temperature_2m"]);
+    if(isFinite(tK) && isFinite(tdK)){
+      const tC = tK - 273.15;
+      const tdC = tdK - 273.15;
+      out["relative_humidity_2m"] = rhFromTD(tC, tdC);
+      out["heat_index_simple"] = heatIndexApprox(tC, out["relative_humidity_2m"]);
+    }
+    const u = toNum(r["u_component_of_wind_10m"]);
+    const v = toNum(r["v_component_of_wind_10m"]);
+    if(isFinite(u) && isFinite(v)){
+      out["wind_speed_10m"] = Math.sqrt(u*u + v*v);
+    }
+    return out;
+  });
+}
+
+function toNum(x){
+  const n = Number(x);
+  return isFinite(n) ? n : NaN;
+}
+
+// RH (%) from T and Td (C) using Magnus formula
+function rhFromTD(tC, tdC){
+  const a = 17.625, b = 243.04;
+  const es = 6.1094 * Math.exp((a*tC)/(b+tC));
+  const e  = 6.1094 * Math.exp((a*tdC)/(b+tdC));
+  return clamp(100*e/es, 0, 100);
+}
+
+// Simple heat index approximation (C) valid-ish for warm/humid
+function heatIndexApprox(tC, rh){
+  if(!isFinite(tC) || !isFinite(rh)) return NaN;
+  // convert to F for standard formula then back to C
+  const tF = tC*9/5 + 32;
+  const HI = -42.379 + 2.04901523*tF + 10.14333127*rh
+    - 0.22475541*tF*rh - 0.00683783*tF*tF - 0.05481717*rh*rh
+    + 0.00122874*tF*tF*rh + 0.00085282*tF*rh*rh
+    - 0.00000199*tF*tF*rh*rh;
+  const hiC = (HI - 32) * 5/9;
+  return hiC;
+}
+
+VAR_META["relative_humidity_2m"] = {
+  label: "Umidade relativa do ar (2 m) — derivada",
+  unit: "% (estimada)",
+  transform: v => v,
+  description: "Estimativa de umidade relativa usando temperatura e ponto de orvalho (Magnus).",
+  relevance: "Aumenta desconforto térmico e, em combinação com temperatura, eleva risco de estresse por calor."
+};
+VAR_META["wind_speed_10m"] = {
+  label: "Velocidade do vento (10 m) — derivada",
+  unit: "m/s",
+  transform: v => v,
+  description: "Magnitude do vento calculada a partir de U e V: sqrt(u²+v²).",
+  relevance: "Ventos fortes podem intensificar fogo, ressuspender poeira e alterar sensação térmica."
+};
+VAR_META["heat_index_simple"] = {
+  label: "Índice de calor (aprox.) — derivado",
+  unit: "°C",
+  transform: v => v,
+  description: "Aproximação de índice de calor a partir de temperatura e umidade. Útil para comunicação pública (sensação de calor).",
+  relevance: "Apoia alertas de saúde e planejamento de ações em dias críticos."
+};
+
+/* ===========================
+   Stats: MK + Sen slope, corr, OLS
+=========================== */
+// Mann-Kendall (two-sided) with normal approximation and tie correction
+function mannKendall(y){
+  const n = y.length;
+  if(n < 8) return {tau:NaN, z:NaN, p:NaN, trend:"insuficiente", s:NaN, varS:NaN};
+
+  let S = 0;
+  for(let i=0;i<n-1;i++){
+    for(let j=i+1;j<n;j++){
+      const d = y[j]-y[i];
+      if(d>0) S += 1;
+      else if(d<0) S -= 1;
+    }
+  }
+
+  // tie correction
+  const counts = new Map();
+  for(const v of y){
+    const k = v.toFixed(6);
+    counts.set(k, (counts.get(k)||0)+1);
+  }
+  let tieSum = 0;
+  for(const c of counts.values()){
+    if(c>1) tieSum += c*(c-1)*(2*c+5);
+  }
+
+  const varS = (n*(n-1)*(2*n+5) - tieSum) / 18;
+  const z = (S>0) ? (S-1)/Math.sqrt(varS) : (S<0) ? (S+1)/Math.sqrt(varS) : 0;
+  const p = 2*(1 - normCdf(Math.abs(z)));
+  const tau = S / (0.5*n*(n-1));
+  const trend = (p<0.05) ? (S>0 ? "aumentando (significativo)" : S<0 ? "diminuindo (significativo)" : "sem tendência") : "sem tendência (não significativo)";
+  return {tau, z, p, trend, s:S, varS};
+}
+
+// Sen slope (median of pairwise slopes)
+function senSlope(x, y){
+  const n = y.length;
+  const slopes = [];
+  for(let i=0;i<n-1;i++){
+    for(let j=i+1;j<n;j++){
+      const dx = x[j]-x[i];
+      if(dx!==0) slopes.push( (y[j]-y[i]) / dx );
+    }
+  }
+  slopes.sort((a,b)=>a-b);
+  const m = slopes.length;
+  if(m===0) return NaN;
+  return (m%2===1) ? slopes[(m-1)/2] : 0.5*(slopes[m/2 - 1] + slopes[m/2]);
+}
+
+// Normal CDF approximation
+function normCdf(z){
+  // Abramowitz-Stegun approximation
+  const t = 1 / (1 + 0.2316419*z);
+  const d = 0.3989423*Math.exp(-z*z/2);
+  const p = d*t*(0.3193815 + t*(-0.3565638 + t*(1.781478 + t*(-1.821256 + t*1.330274))));
+  return (z>0) ? 1-p : p;
+}
+
+// Pearson + Spearman
+function pearson(x,y){
+  const n=x.length;
+  let sx=0, sy=0, sxx=0, syy=0, sxy=0;
+  for(let i=0;i<n;i++){
+    sx += x[i]; sy += y[i];
+    sxx += x[i]*x[i]; syy += y[i]*y[i];
+    sxy += x[i]*y[i];
+  }
+  const cov = sxy/n - (sx/n)*(sy/n);
+  const vx = sxx/n - (sx/n)*(sx/n);
+  const vy = syy/n - (sy/n)*(sy/n);
+  const r = cov / Math.sqrt(vx*vy);
+  return r;
+}
+function rank(arr){
+  // average ranks for ties
+  const idx = arr.map((v,i)=>[v,i]).sort((a,b)=>a[0]-b[0]);
+  const ranks = Array(arr.length);
+  let i=0;
+  while(i<idx.length){
+    let j=i;
+    while(j<idx.length && idx[j][0]===idx[i][0]) j++;
+    const r = (i + j - 1)/2 + 1;
+    for(let k=i;k<j;k++) ranks[idx[k][1]] = r;
+    i=j;
+  }
+  return ranks;
+}
+function spearman(x,y){
+  const rx=rank(x), ry=rank(y);
+  return pearson(rx,ry);
+}
+
+// OLS regression y = a + b x
+function ols(x,y){
+  const n=x.length;
+  const mx = x.reduce((a,b)=>a+b,0)/n;
+  const my = y.reduce((a,b)=>a+b,0)/n;
+  let sxx=0, sxy=0, syy=0;
+  for(let i=0;i<n;i++){
+    const dx=x[i]-mx;
+    const dy=y[i]-my;
+    sxx += dx*dx;
+    sxy += dx*dy;
+    syy += dy*dy;
+  }
+  const b = sxy/sxx;
+  const a = my - b*mx;
+  const yhat = x.map(v=>a+b*v);
+  const ssres = y.reduce((acc,yi,i)=>acc+(yi-yhat[i])**2,0);
+  const sst = y.reduce((acc,yi)=>acc+(yi-my)**2,0);
+  const r2 = 1 - ssres/sst;
+
+  // standard error + p-value for slope
+  const se2 = ssres/(n-2);
+  const seb = Math.sqrt(se2/sxx);
+  const t = b/seb;
+  const p = 2*(1 - tCdf(Math.abs(t), n-2));
+  return {a,b,r2,t,p};
+}
+
+// Student t CDF using incomplete beta approximation
+function tCdf(t, df){
+  // from https://en.wikipedia.org/wiki/Student%27s_t-distribution#Cumulative_distribution_function
+  const x = df/(df + t*t);
+  const ib = incbeta(x, df/2, 0.5);
+  const cdf = (t>=0) ? 1 - 0.5*ib : 0.5*ib;
+  return cdf;
+}
+function incbeta(x, a, b){
+  // regularized incomplete beta I_x(a,b)
+  // continued fraction (Lentz)
+  const bt = (x===0 || x===1) ? 0 :
+    Math.exp(gammaln(a+b) - gammaln(a) - gammaln(b) + a*Math.log(x) + b*Math.log(1-x));
+  if(x < (a+1)/(a+b+2)){
+    return bt * betacf(x,a,b) / a;
+  } else {
+    return 1 - bt * betacf(1-x,b,a) / b;
+  }
+}
+function betacf(x,a,b){
+  const MAXIT=200, EPS=3e-10, FPMIN=1e-30;
+  let qab=a+b, qap=a+1, qam=a-1;
+  let c=1, d=1-qab*x/qap;
+  if(Math.abs(d)<FPMIN) d=FPMIN;
+  d=1/d;
+  let h=d;
+  for(let m=1;m<=MAXIT;m++){
+    const m2=2*m;
+    let aa = m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN) d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN) c=FPMIN;
+    d=1/d; h*=d*c;
+    aa = -(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN) d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN) c=FPMIN;
+    d=1/d;
+    const del=d*c;
+    h*=del;
+    if(Math.abs(del-1.0) < EPS) break;
+  }
+  return h;
+}
+function gammaln(z){
+  const cof=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  let x=z;
+  let y=z;
+  let tmp=x+5.5;
+  tmp-=(x+0.5)*Math.log(tmp);
+  let ser=1.000000000190015;
+  for(let j=0;j<cof.length;j++){
+    y+=1;
+    ser+=cof[j]/y;
+  }
+  return -tmp+Math.log(2.5066282746310005*ser/x);
+}
+
+/* ===========================
+   Load data
+=========================== */
+async function loadCSV(url){
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error(`Não consegui carregar: ${url}`);
+  const text = await res.text();
+  return new Promise((resolve)=>{
+    Papa.parse(text, {
+      header:true,
+      dynamicTyping:false,
+      skipEmptyLines:true,
+      complete: (r)=> resolve(r.data)
+    });
+  });
+}
+
+function inferCols(rows){
+  const cols = new Set();
+  rows.forEach(r=> Object.keys(r).forEach(k=>cols.add(k)));
+  return [...cols];
+}
+
+function datasetFromRows(city, rows){
+  // Normalize date
+  const clean = rows
+    .filter(r => r.date)
+    .map(r => ({...r, __date: parseDate(r.date)}))
+    .sort((a,b)=>a.__date-b.__date);
+
+  const cols = inferCols(clean).filter(c=>!EXCLUDE_KEYS.has(c) && c!=="__date");
+  const dateMin = clean[0].__date;
+  const dateMax = clean[clean.length-1].__date;
+  return {city, rawRows: clean, cols, dateMin, dateMax};
+}
+
+async function init(){
+  // Load Cáceres
+  const rows = await loadCSV(DATA_URL);
+  state.datasets[DEFAULT_CITY] = datasetFromRows(DEFAULT_CITY, rows);
+
+  // UI init
+  buildCitySelect();
+  buildVarSelects();
+  setDefaultDates();
+  attachEvents();
+
+  // First render
+  recalcAll();
+}
+
+function buildCitySelect(){
+  const sel = document.getElementById("selCities");
+  sel.innerHTML = "";
+  const names = Object.keys(state.datasets);
+  for(const n of names){
+    const opt = document.createElement("option");
+    opt.value = n; opt.textContent = n;
+    sel.appendChild(opt);
+  }
+  // default select Cáceres
+  [...sel.options].forEach(o=> o.selected = (o.value===DEFAULT_CITY));
+  document.getElementById("pillCity").textContent = DEFAULT_CITY;
+}
+
+function getSelectedCities(){
+  const sel = document.getElementById("selCities");
+  return [...sel.selectedOptions].map(o=>o.value);
+}
+
+function availableVars(){
+  // base on Cáceres dataset schema (assume others match)
+  const base = state.datasets[DEFAULT_CITY];
+  let cols = base.cols.slice();
+  // hide snow/ice unless enabled
+  if(!state.showSnow) cols = cols.filter(c=>!SNOW_RE.test(c));
+  // add derived if enabled
+  if(state.showDerived){
+    cols = cols.concat(["relative_humidity_2m","wind_speed_10m","heat_index_simple"]);
+  }
+  // Keep only numeric-looking columns by sampling
+  return cols;
+}
+
+function buildVarSelects(){
+  const vars = availableVars();
+  const selVar = document.getElementById("selVar");
+  const selX = document.getElementById("selX");
+  const selY = document.getElementById("selY");
+
+  function fill(sel, selected){
+    sel.innerHTML="";
+    vars.forEach(v=>{
+      const opt=document.createElement("option");
+      opt.value=v;
+      opt.textContent = niceLabel(v);
+      sel.appendChild(opt);
+    });
+    if(selected && vars.includes(selected)) sel.value=selected;
+  }
+
+  // sensible defaults
+  const defaultMain = vars.includes("temperature_2m") ? "temperature_2m" : vars[0];
+  fill(selVar, defaultMain);
+  fill(selX, vars.includes("temperature_2m") ? "temperature_2m" : vars[0]);
+  fill(selY, vars.includes("total_precipitation_sum") ? "total_precipitation_sum" : vars[1] || vars[0]);
+
+  updateVarInfo();
+}
+
+function setDefaultDates(){
+  const d = state.datasets[DEFAULT_CITY];
+  document.getElementById("dateStart").value = isoDate(d.dateMin);
+  document.getElementById("dateEnd").value = isoDate(d.dateMax);
+  document.getElementById("pillPeriod").textContent = `${isoDate(d.dateMin)} → ${isoDate(d.dateMax)}`;
+}
+
+/* ===========================
+   Data wrangling
+=========================== */
+function filterByDate(rows, start, end){
+  return rows.filter(r => r.__date >= start && r.__date <= end);
+}
+
+// Auto reducer for a variable (when aggregating):
+function autoReducer(col){
+  const c = col.toLowerCase();
+  if(c.endsWith("_sum")) return "sum";
+  if(c.endsWith("_max")) return "max";
+  if(c.endsWith("_min")) return "min";
+  return "mean";
+}
+
+function aggregate(rows, agg, col, reducer){
+  if(agg==="daily"){
+    return rows.map(r=>({
+      key: isoDate(r.__date),
+      date: r.__date,
+      value: getValue(r, col)
+    }));
+  }
+  const group = new Map();
+  for(const r of rows){
+    const k = (agg==="monthly") ? monthKey(r.__date) : yearKey(r.__date);
+    if(!group.has(k)) group.set(k, []);
+    group.get(k).push(r);
+  }
+  const out = [];
+  for(const [k, arr] of group.entries()){
+    const values = arr.map(r=>getValue(r,col)).filter(v=>isFinite(v));
+    if(values.length===0) continue;
+    let v;
+    if(reducer==="mean") v = values.reduce((a,b)=>a+b,0)/values.length;
+    else if(reducer==="sum") v = values.reduce((a,b)=>a+b,0);
+    else if(reducer==="min") v = Math.min(...values);
+    else if(reducer==="max") v = Math.max(...values);
+    else v = values.reduce((a,b)=>a+b,0)/values.length;
+
+    // date representative
+    let d;
+    if(agg==="monthly"){
+      const [Y,M] = k.split("-").map(Number);
+      d = new Date(Y, M-1, 15);
+    } else {
+      d = new Date(Number(k), 6, 1);
+    }
+    out.push({key:k, date:d, value:v});
+  }
+  out.sort((a,b)=>a.date-b.date);
+  return out;
+}
+
+function getValue(row, col){
+  if(col in row){
+    const v = toNum(row[col]);
+    return convert(col, v);
+  }
+  // derived variables may not exist yet
+  return NaN;
+}
+
+/* ===========================
+   Season classification (data-driven)
+=========================== */
+function seasonMaskMonthly(seriesMonthlyPrecip){
+  // series: [{key:'YYYY-MM', value:mm}]
+  const vals = seriesMonthlyPrecip.map(d=>d.value).filter(v=>isFinite(v)).sort((a,b)=>a-b);
+  if(vals.length<12) return null;
+  const q = quantile(vals, SEASON_Q);
+  const mask = new Map();
+  seriesMonthlyPrecip.forEach(d=>{
+    mask.set(d.key, d.value <= q ? "seca" : "chuvosa");
+  });
+  return {q, mask};
+}
+function quantile(sortedVals, q){
+  const n = sortedVals.length;
+  if(n===0) return NaN;
+  const pos = (n-1)*q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if(sortedVals[base+1]!==undefined) return sortedVals[base] + rest*(sortedVals[base+1]-sortedVals[base]);
+  return sortedVals[base];
+}
+
+/* ===========================
+   Rendering
+=========================== */
+function updateVarInfo(){
+  const col = document.getElementById("selVar").value;
+  const m = getMeta(col);
+  document.getElementById("varUnit").textContent = `Unidade: ${m.unit} • Nome técnico: ${col}`;
+  document.getElementById("varInfo").innerHTML =
+    `<b>${m.label}</b><br>${m.description}<br><br><b>Por que isso importa no PLAC?</b><br>${m.relevance}`;
+}
+
+function kpiUpdate(series){
+  const vals = series.map(d=>d.value).filter(v=>isFinite(v));
+  const n = vals.length;
+  const mean = vals.reduce((a,b)=>a+b,0)/n;
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  document.getElementById("kpiMean").textContent = fmt(mean);
+  document.getElementById("kpiMin").textContent = fmt(min);
+  document.getElementById("kpiMax").textContent = fmt(max);
+  document.getElementById("kpiN").textContent = `N = ${n} pontos na série (${document.getElementById("selAgg").value}).`;
+}
+
+function trendUpdate(series, col){
+  const vals = series.map(d=>d.value).filter(v=>isFinite(v));
+  const xs = series.filter(d=>isFinite(d.value)).map(d=>d.date.getTime()/86400000); // days
+  if(vals.length < 8){
+    document.getElementById("trendBox").innerHTML = "Série curta demais para tendência robusta (precisa de pelo menos ~8 pontos).";
+    return;
+  }
+  const mk = mannKendall(vals);
+  const slopePerDay = senSlope(xs, vals);
+  // express per decade for nicer communication when agg monthly/annual
+  const agg = document.getElementById("selAgg").value;
+  let slopeLabel = "";
+  if(isFinite(slopePerDay)){
+    // if monthly or annual, xs is days anyway; convert to per year/decade
+    const perYear = slopePerDay * 365.25;
+    const perDecade = perYear * 10;
+    slopeLabel = `<b>Sen (taxa)</b>: ${fmt(perDecade,3)} por década`;
+  } else {
+    slopeLabel = "<b>Sen (taxa)</b>: —";
+  }
+  const unit = getUnit(col).replace("(acumulado)","").trim();
+  document.getElementById("trendBox").innerHTML =
+    `• <b>Mann‑Kendall</b>: τ = ${fmt(mk.tau,3)} • z = ${fmt(mk.z,2)} • p = ${fmt(mk.p,4)}<br>`+
+    `• <b>Interpretação</b>: ${mk.trend}<br>`+
+    `• ${slopeLabel} <span class="small">(${unit})</span><br>`+
+    `<span class="small">Nota: para variáveis “soma” (ex.: chuva), a taxa por década depende do redutor escolhido (soma vs média).</span>`;
+}
+
+function plotTimeSeries(citySeries, col){
+  const agg = document.getElementById("selAgg").value;
+  const traces = citySeries.map(cs=>({
+    x: cs.series.map(d=>d.date),
+    y: cs.series.map(d=>d.value),
+    mode:"lines",
+    name: cs.city,
+    hovertemplate: "%{x|%Y-%m-%d}<br>%{y:.2f}<extra>"+cs.city+"</extra>"
+  }));
+
+  const layout = {
+    margin:{l:56,r:18,t:12,b:48},
+    xaxis:{title:(agg==="daily"?"Data":"Período"), showgrid:true, gridcolor:"rgba(190,18,60,.08)"},
+    yaxis:{title: `${niceLabel(col)} (${getUnit(col)})`, showgrid:true, gridcolor:"rgba(190,18,60,.08)"},
+    legend:{orientation:"h", y:1.08},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(0,0,0,0)",
+  };
+  Plotly.newPlot("plotTS", traces, layout, {displayModeBar:true, responsive:true});
+  state.lastPlotId = "plotTS";
+}
+
+function plotBoxMonths(citySeries, col){
+  const traces = [];
+  for(const cs of citySeries){
+    // group values by month
+    const byM = Array.from({length:12}, ()=>[]);
+    cs.series.forEach(d=>{
+      const m = d.date.getMonth();
+      if(isFinite(d.value)) byM[m].push(d.value);
+    });
+    for(let m=0;m<12;m++){
+      traces.push({
+        y: byM[m],
+        type: "box",
+        name: `${cs.city} • ${String(m+1).padStart(2,"0")}`,
+        boxpoints: false,
+        jitter: 0,
+        whiskerwidth: 0.6
+      });
+    }
+  }
+  const layout = {
+    margin:{l:56,r:18,t:12,b:70},
+    yaxis:{title:`${niceLabel(col)} (${getUnit(col)})`, gridcolor:"rgba(190,18,60,.08)"},
+    xaxis:{tickangle:-35},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(0,0,0,0)",
+    showlegend:false
+  };
+  Plotly.newPlot("plotBox", traces, layout, {displayModeBar:true, responsive:true});
+  state.lastPlotId = "plotBox";
+}
+
+function plotSeasonal(citySeries, col){
+  // Use precipitation monthly to label months as dry/wet
+  const traces = [];
+  let info = "";
+  for(const cs of citySeries){
+    const precip = cs.baseMonthlyPrecip;
+    const sm = seasonMaskMonthly(precip);
+    if(!sm){ info = "Não há dados suficientes para classificar seca/chuvosa."; continue; }
+    const mask = sm.mask;
+
+    const dry = [], wet = [];
+    cs.series.forEach(d=>{
+      if(!isFinite(d.value)) return;
+      const k = monthKey(d.date);
+      const s = mask.get(k) || "chuvosa";
+      (s==="seca" ? dry : wet).push(d.value);
+    });
+
+    traces.push({y: dry, type:"box", name:`${cs.city} • seca`, boxpoints:false});
+    traces.push({y: wet, type:"box", name:`${cs.city} • chuvosa`, boxpoints:false});
+
+    info = `Critério local (quantil ${SEASON_Q}): meses com precipitação mensal ≤ ${fmt(sm.q,1)} mm = <b>seca</b>.`;
+  }
+
+  const layout = {
+    margin:{l:56,r:18,t:12,b:70},
+    yaxis:{title:`${niceLabel(col)} (${getUnit(col)})`, gridcolor:"rgba(190,18,60,.08)"},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(0,0,0,0)"
+  };
+  Plotly.newPlot("plotSeason", traces, layout, {displayModeBar:true, responsive:true});
+  state.lastPlotId = "plotSeason";
+
+  if(info){
+    // show under plot as annotation via title-ish
+    Plotly.relayout("plotSeason", {title:{text:info, font:{size:12, color:"rgba(107,114,128,.95)"}, x:0.01}});
+  }
+}
+
+function plotScatter(citySeries, xCol, yCol, lag){
+  // scatter per city; all points pooled for stats
+  const traces = [];
+  const allX=[], allY=[];
+  for(const cs of citySeries){
+    const sx = cs.seriesXY.x;
+    const sy = cs.seriesXY.y;
+    const pts = alignXY(sx, sy, lag);
+    traces.push({
+      x: pts.x, y: pts.y,
+      mode:"markers",
+      type:"scatter",
+      name: cs.city,
+      marker:{size:7, opacity:0.75}
+    });
+    allX.push(...pts.x); allY.push(...pts.y);
+  }
+
+  let statsHtml = "—";
+  if(allX.length>=10){
+    const r = pearson(allX,allY);
+    const rs = spearman(allX,allY);
+    const fit = ols(allX,allY);
+    const xs = [Math.min(...allX), Math.max(...allX)];
+    const ys = xs.map(v=>fit.a + fit.b*v);
+    traces.push({
+      x: xs, y: ys, mode:"lines", name:"Regressão (pooled)",
+      line:{dash:"dot", width:3}
+    });
+    statsHtml = `• Pearson r = <b>${fmt(r,3)}</b> (R² ≈ ${fmt(r*r,3)})<br>`+
+                `• Spearman ρ = <b>${fmt(rs,3)}</b><br>`+
+                `• Regressão OLS: y = ${fmt(fit.a,3)} + ${fmt(fit.b,3)}·x • R² = ${fmt(fit.r2,3)} • p(slope) = ${fmt(fit.p,4)}<br>`+
+                `<span class="small">Obs.: estatística “pooled” (todos municípios juntos). Para análise por município, selecione apenas 1.</span>`;
+  } else {
+    statsHtml = "Poucos pontos para regressão (selecione um período maior ou agregação mensal/anual).";
+  }
+
+  const layout = {
+    margin:{l:56,r:18,t:12,b:56},
+    xaxis:{title:`${niceLabel(xCol)} (${getUnit(xCol)})`, gridcolor:"rgba(190,18,60,.08)"},
+    yaxis:{title:`${niceLabel(yCol)} (${getUnit(yCol)})`, gridcolor:"rgba(190,18,60,.08)"},
+    legend:{orientation:"h", y:1.08},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(0,0,0,0)"
+  };
+  Plotly.newPlot("plotScatter", traces, layout, {displayModeBar:true, responsive:true});
+  state.lastPlotId = "plotScatter";
+  document.getElementById("scatterStats").innerHTML = statsHtml;
+}
+
+function alignXY(xSeries, ySeries, lag){
+  // xSeries and ySeries are arrays of {key,date,value}
+  // match by index after sorting (same agg). apply lag on y (shift forward)
+  const x = xSeries.map(d=>d.value);
+  const y = ySeries.map(d=>d.value);
+  const n = Math.min(x.length, y.length - lag);
+  const outX=[], outY=[];
+  for(let i=0;i<n;i++){
+    const xi = x[i];
+    const yi = y[i+lag];
+    if(isFinite(xi) && isFinite(yi)){
+      outX.push(xi);
+      outY.push(yi);
+    }
+  }
+  return {x: outX, y: outY};
+}
+
+function renderTable(citySeries, col){
+  // show first selected city only in table to keep simple
+  const cs = citySeries[0];
+  const head = document.getElementById("tblHead");
+  const body = document.getElementById("tblBody");
+  head.innerHTML = ""; body.innerHTML = "";
+  const cols = ["Período", niceLabel(col)];
+  cols.forEach(c=>{
+    const th=document.createElement("th"); th.textContent=c; head.appendChild(th);
+  });
+  cs.series.slice(-300).forEach(d=>{
+    const tr=document.createElement("tr");
+    const td1=document.createElement("td"); td1.textContent=d.key; tr.appendChild(td1);
+    const td2=document.createElement("td"); td2.textContent=fmt(d.value,2); tr.appendChild(td2);
+    body.appendChild(tr);
+  });
+}
+
+/* ===========================
+   Main pipeline
+=========================== */
+function recalcAll(){
+  const cities = getSelectedCities();
+  if(cities.length===0) return;
+
+  const col = document.getElementById("selVar").value;
+  const agg = document.getElementById("selAgg").value;
+  const reducerSel = document.getElementById("selReducer").value;
+  const reducer = (reducerSel==="auto") ? autoReducer(col) : reducerSel;
+
+  const start = parseDate(document.getElementById("dateStart").value);
+  const end   = parseDate(document.getElementById("dateEnd").value);
+
+  document.getElementById("pillCity").textContent = cities.join(" vs ");
+  document.getElementById("pillPeriod").textContent = `${isoDate(start)} → ${isoDate(end)}`;
+
+  // build per-city series
+  const citySeries = [];
+  for(const c of cities){
+    const ds = state.datasets[c];
+    let rows = filterByDate(ds.rawRows, start, end);
+    if(state.showDerived) rows = addDerived(rows);
+    const series = aggregate(rows, agg, col, reducer);
+
+    // For season classification, precompute monthly precip
+    let monthlyPrecip = aggregate(rows, "monthly", "total_precipitation_sum", "sum");
+    citySeries.push({city:c, series, rows, baseMonthlyPrecip: monthlyPrecip});
+  }
+
+  // KPIs + trend based on first city (policy story generally local)
+  kpiUpdate(citySeries[0].series);
+  trendUpdate(citySeries[0].series, col);
+
+  // plots
+  plotTimeSeries(citySeries, col);
+  plotBoxMonths(citySeries, col);
+  plotSeasonal(citySeries, col);
+
+  // scatter
+  const xCol = document.getElementById("selX").value;
+  const yCol = document.getElementById("selY").value;
+  const lag  = Number(document.getElementById("selLag").value);
+
+  // build x/y series per city under same agg and reducer auto rules for each var
+  for(const cs of citySeries){
+    const rows = cs.rows;
+    const redX = (document.getElementById("selReducer").value==="auto") ? autoReducer(xCol) : document.getElementById("selReducer").value;
+    const redY = (document.getElementById("selReducer").value==="auto") ? autoReducer(yCol) : document.getElementById("selReducer").value;
+    cs.seriesXY = {
+      x: aggregate(rows, agg, xCol, redX),
+      y: aggregate(rows, agg, yCol, redY),
+    };
+  }
+  plotScatter(citySeries, xCol, yCol, lag);
+
+  // table
+  renderTable(citySeries, col);
+
+  updateVarInfo();
+}
+
+/* ===========================
+   Exports
+=========================== */
+function downloadCSV(filename, rows){
+  const header = Object.keys(rows[0]||{});
+  const lines = [header.join(",")];
+  for(const r of rows){
+    lines.push(header.map(h=>{
+      const v = r[h];
+      if(v==null) return "";
+      const s = String(v).replaceAll('"','""');
+      return `"${s}"`;
+    }).join(","));
+  }
+  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportSelection(){
+  const city = getSelectedCities()[0];
+  const col = document.getElementById("selVar").value;
+  const agg = document.getElementById("selAgg").value;
+  const reducerSel = document.getElementById("selReducer").value;
+  const reducer = (reducerSel==="auto") ? autoReducer(col) : reducerSel;
+
+  const start = parseDate(document.getElementById("dateStart").value);
+  const end   = parseDate(document.getElementById("dateEnd").value);
+
+  let rows = filterByDate(state.datasets[city].rawRows, start, end);
+  if(state.showDerived) rows = addDerived(rows);
+  const ser = aggregate(rows, agg, col, reducer);
+  const out = ser.map(d=>({period:d.key, value:d.value, unit:getUnit(col), variable:niceLabel(col), city}));
+  downloadCSV(`PLAC_${city}_${col}_${agg}.csv`, out);
+}
+
+function exportReport(){
+  // lightweight report: capture plots as images + configuration summary
+  const cities = getSelectedCities();
+  const col = document.getElementById("selVar").value;
+  const xCol = document.getElementById("selX").value;
+  const yCol = document.getElementById("selY").value;
+  const agg = document.getElementById("selAgg").value;
+  const reducerSel = document.getElementById("selReducer").value;
+
+  const cfg = {
+    cidades: cities,
+    variavel_principal: col,
+    variavel_x: xCol,
+    variavel_y: yCol,
+    agregacao: agg,
+    redutor: reducerSel,
+    periodo: [document.getElementById("dateStart").value, document.getElementById("dateEnd").value],
+    seca_q: SEASON_Q
+  };
+
+  const html = `
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>Relatório PLAC — Painel Climático</title>
+<style>
+body{font-family:system-ui,Segoe UI,Roboto,Arial; margin:24px; color:#111827}
+h1{margin:0 0 6px} .muted{color:#6b7280} pre{background:#f8fafc; padding:12px; border-radius:12px; border:1px solid #e5e7eb}
+img{max-width:100%; border:1px solid #e5e7eb; border-radius:14px; margin:10px 0}
+</style></head><body>
+<h1>Relatório (exportado do Painel Climático do PLAC)</h1>
+<div class="muted">Gerado em: ${new Date().toLocaleString("pt-BR")}</div>
+<h2>Configuração</h2>
+<pre>${escapeHtml(JSON.stringify(cfg,null,2))}</pre>
+<h2>Figuras</h2>
+<p class="muted">As imagens abaixo são capturas dos gráficos do painel.</p>
+<div id="imgs">Gerando…</div>
+</body></html>`;
+
+  const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `Relatorio_PLAC_${cities.join("_")}_${agg}.html`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+
+  function escapeHtml(s){ return s.replace(/[&<>]/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c])); }
+}
+
+async function exportPNG(){
+  const id = state.lastPlotId || "plotTS";
+  const gd = document.getElementById(id);
+  if(!gd) return;
+  const url = await Plotly.toImage(gd, {format:"png", height: 900, width: 1400, scale: 2});
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `PLAC_${id}.png`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ===========================
+   UI Events
+=========================== */
+function attachEvents(){
+  document.getElementById("selCities").addEventListener("change", ()=>{ recalcAll(); });
+  document.getElementById("selVar").addEventListener("change", ()=>{ updateVarInfo(); recalcAll(); });
+  document.getElementById("selAgg").addEventListener("change", ()=>{ recalcAll(); });
+  document.getElementById("selReducer").addEventListener("change", ()=>{ recalcAll(); });
+  document.getElementById("dateStart").addEventListener("change", ()=>{ recalcAll(); });
+  document.getElementById("dateEnd").addEventListener("change", ()=>{ recalcAll(); });
+  document.getElementById("selX").addEventListener("change", ()=>{ recalcAll(); });
+  document.getElementById("selY").addEventListener("change", ()=>{ recalcAll(); });
+  document.getElementById("selLag").addEventListener("change", ()=>{ recalcAll(); });
+  document.getElementById("btnRecalc").addEventListener("click", ()=>{ recalcAll(); });
+
+  // Tabs
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      const id = t.dataset.tab;
+      state.activeTab = id;
+      document.querySelectorAll(".tabPane").forEach(p=>p.classList.add("hide"));
+      document.getElementById("tab-"+id).classList.remove("hide");
+      // remember last plot in this tab
+      if(id==="t1") state.lastPlotId="plotTS";
+      if(id==="t2") state.lastPlotId="plotBox";
+      if(id==="t3") state.lastPlotId="plotSeason";
+      if(id==="t4") state.lastPlotId="plotScatter";
+    });
+  });
+
+  // chips
+  document.getElementById("chipHideSnow").addEventListener("click", ()=>{
+    state.showSnow = !state.showSnow;
+    document.getElementById("chipHideSnow").classList.toggle("off", state.showSnow); // off means showing snow
+    document.getElementById("chipHideSnow").textContent = state.showSnow ? "Mostrar neve/gelo" : "Ocultar neve/gelo";
+    buildVarSelects();
+    recalcAll();
+  });
+  document.getElementById("chipShowDerived").addEventListener("click", ()=>{
+    state.showDerived = !state.showDerived;
+    document.getElementById("chipShowDerived").classList.toggle("off", !state.showDerived);
+    buildVarSelects();
+    recalcAll();
+  });
+  document.getElementById("chipSeason").addEventListener("click", ()=>{
+    state.compareSeason = !state.compareSeason;
+    document.getElementById("chipSeason").classList.toggle("off", !state.compareSeason);
+    // just switch tab to seasonal when enabled
+    if(state.compareSeason){
+      document.querySelector('.tab[data-tab="t3"]').click();
+    }
+  });
+
+  // exports
+  document.getElementById("btnDownload").addEventListener("click", exportSelection);
+  document.getElementById("btnExportData").addEventListener("click", exportSelection);
+  document.getElementById("btnExportPNG").addEventListener("click", exportPNG);
+  document.getElementById("btnExportReport").addEventListener("click", exportReport);
+
+  // reset
+  document.getElementById("btnReset").addEventListener("click", ()=>{
+    buildCitySelect();
+    buildVarSelects();
+    setDefaultDates();
+    document.getElementById("selAgg").value="monthly";
+    document.getElementById("selReducer").value="auto";
+    recalcAll();
+  });
+
+  // Help modal
+  const modal = document.getElementById("modal");
+  document.getElementById("btnHelp").addEventListener("click", ()=> modal.classList.remove("hide"));
+  document.getElementById("btnClose").addEventListener("click", ()=> modal.classList.add("hide"));
+  modal.addEventListener("click", (e)=>{ if(e.target===modal) modal.classList.add("hide"); });
+
+  // Add city upload
+  document.getElementById("fileCity").addEventListener("change", async (e)=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    if(Object.keys(state.datasets).length >= MAX_CITIES){
+      alert(`Limite de ${MAX_CITIES} municípios. Remova um antes de adicionar outro.`);
+      e.target.value="";
+      return;
+    }
+    const text = await f.text();
+    const rows = await new Promise((resolve)=>{
+      Papa.parse(text, {header:true, dynamicTyping:false, skipEmptyLines:true, complete:(r)=>resolve(r.data)});
+    });
+    const name = f.name.replace(".csv","").replaceAll("_"," ").slice(0,48);
+    state.datasets[name] = datasetFromRows(name, rows);
+    buildCitySelect();
+    buildVarSelects();
+    // select newly added too
+    const sel = document.getElementById("selCities");
+    [...sel.options].forEach(o=>{ if(o.value===name) o.selected=true; });
+    recalcAll();
+    e.target.value="";
+  });
+
+  document.getElementById("btnRemoveCity").addEventListener("click", ()=>{
+    const sel = document.getElementById("selCities");
+    const cities = getSelectedCities();
+    if(cities.length===0) return;
+    for(const c of cities){
+      if(c===DEFAULT_CITY) continue; // keep Cáceres
+      delete state.datasets[c];
+    }
+    buildCitySelect();
+    buildVarSelects();
+    recalcAll();
+  });
+}
+
+/* ===========================
+   Start
+=========================== */
+init().catch(err=>{
+  console.error(err);
+  alert("Erro ao iniciar o painel: " + err.message);
+});
+</script>
+</body>
+</html>
