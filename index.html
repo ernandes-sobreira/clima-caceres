@@ -1616,4 +1616,25 @@ init().catch(err=>{
 });
 </script>
 </body>
+  const DATA_URL = 'data/caceres_era5land_daily.csv.gz';
+
+loadGzCSV(DATA_URL)
+  .then(csvText => {
+    // se você usa PapaParse:
+    Papa.parse(csvText, {
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: (res) => {
+        const rows = res.data;
+        // aqui você chama sua função que alimenta o painel:
+        initApp(rows); // troque initApp pelo nome que você tiver aí
+      }
+    });
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Falha ao carregar o CSV compactado (.gz). Veja o Console (F12).');
+  });
+
 </html>
