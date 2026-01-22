@@ -668,34 +668,53 @@ function plotTimeSeries(scale, varName){
 }
 
 function plotBoxplotMonthly(varName){
-  // Um traço único com x = nome do mês (fica perfeito para leigo)
   const rows = filterRows("monthly");
-  const x=[], y=[];
+
+  // cria 12 grupos (1 trace por mês)
+  const byMonth = Array.from({length:12}, ()=>[]);
   for(const r of rows){
-    const v=r[varName];
+    const v = r[varName];
     if(isNum(v)){
-      const m = Number(r.period.slice(5,7));
-      x.push(MONTHS_PT[m-1]);
-      y.push(v);
+      const m = Number(String(r.period).slice(5,7)); // 01..12
+      if(m>=1 && m<=12) byMonth[m-1].push(v);
     }
   }
 
-  Plotly.newPlot("plot", [{
-    x, y,
-    type:"box",
-    boxpoints:false,
-    name:"Cáceres",
-    marker:{color:"#34D399"},
-    line:{color:"#34D399"}
-  }], {
+  const traces = [];
+  for(let i=0;i<12;i++){
+    traces.push({
+      y: byMonth[i],
+      type: "box",
+      name: MONTHS_PT[i],     // Jan, Fev...
+      boxpoints: false,       // sem outliers/pontos
+      whiskerwidth: 0.6,
+      line: {width: 2},
+      marker: {opacity: 0.85}
+    });
+  }
+
+  Plotly.newPlot("plot", traces, {
     margin:{l:62,r:16,t:46,b:54},
     paper_bgcolor:"rgba(0,0,0,0)",
     plot_bgcolor:"rgba(8,10,16,.55)",
     title:{text:`Boxplot mensal — ${VAR_META[varName].label} (${VAR_META[varName].unit})`, font:{size:14,color:"#EAF0FF"}},
-    xaxis:{title:"Mês", gridcolor:"rgba(255,255,255,.06)", color:"#D7DEEE"},
-    yaxis:{title:`${VAR_META[varName].label} (${VAR_META[varName].unit})`, gridcolor:"rgba(255,255,255,.08)", color:"#D7DEEE"},
+    xaxis:{
+      title:"Mês",
+      type:"category",
+      categoryorder:"array",
+      categoryarray: MONTHS_PT,
+      gridcolor:"rgba(255,255,255,.06)",
+      color:"#D7DEEE"
+    },
+    yaxis:{
+      title:`${VAR_META[varName].label} (${VAR_META[varName].unit})`,
+      gridcolor:"rgba(255,255,255,.08)",
+      color:"#D7DEEE"
+    },
+    boxmode:"group"
   }, {responsive:true, displaylogo:false});
 }
+
 
 function plotScatter(scale, xVar, yVar, lag){
   const rows = filterRows(scale);
