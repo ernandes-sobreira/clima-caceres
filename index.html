@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PLAC Cáceres — Painel Climático Interativo</title>
+  <title>PLAC Cáceres — Painel Climático (Mensal/Anual)</title>
 
-  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -20,27 +19,22 @@
       --shadow:0 14px 34px rgba(2,6,23,.10);
       --r:18px;
 
-      /* Paleta: vermelho + verde + azul */
       --red:#ef4444;
-      --red2:#b91c1c;
       --blue:#2563eb;
-      --blue2:#1d4ed8;
       --green:#16a34a;
-      --green2:#15803d;
 
       --chip:#f1f5f9;
       --chipBorder:#e2e8f0;
       --focus:rgba(37,99,235,.22);
-
+      --infoBg:rgba(37,99,235,.08);
       --okBg:rgba(22,163,74,.10);
       --warnBg:rgba(239,68,68,.10);
-      --infoBg:rgba(37,99,235,.08);
     }
 
     *{ box-sizing:border-box; }
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color:var(--text);
       background: radial-gradient(1200px 800px at 10% 10%, rgba(37,99,235,.10), transparent 50%),
                   radial-gradient(1200px 800px at 90% 10%, rgba(22,163,74,.08), transparent 50%),
@@ -56,31 +50,24 @@
       border-bottom:1px solid var(--line);
     }
     .wrap{ max-width:1200px; margin:0 auto; padding:14px 14px; }
+
     .topbar{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
+      flex-wrap:wrap;
     }
     .brand{
       display:flex; align-items:center; gap:10px;
-      min-width:240px;
+      min-width:260px;
     }
     .logo{
       width:38px; height:38px; border-radius:12px;
       background: conic-gradient(from 210deg, var(--red), var(--green), var(--blue), var(--red));
       box-shadow:0 10px 22px rgba(2,6,23,.18);
     }
-    .brand h1{
-      font-size:15px; margin:0;
-      line-height:1.05;
-    }
-    .brand p{
-      margin:2px 0 0;
-      font-size:12px; color:var(--muted);
-    }
+    .brand h1{ font-size:15px; margin:0; line-height:1.05; }
+    .brand p{ margin:2px 0 0; font-size:12px; color:var(--muted); }
 
-    .actions{
-      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-      justify-content:flex-end;
-    }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 
     .btn{
       border:1px solid var(--line);
@@ -88,35 +75,22 @@
       padding:9px 12px;
       border-radius:12px;
       cursor:pointer;
-      font-weight:600;
+      font-weight:800;
       font-size:12px;
       box-shadow:0 8px 18px rgba(2,6,23,.06);
-      transition:.15s transform, .15s box-shadow, .15s border-color, .15s background;
+      transition:.15s transform, .15s box-shadow, .15s border-color;
       color:var(--text);
     }
     .btn:hover{ transform: translateY(-1px); box-shadow:0 10px 22px rgba(2,6,23,.10); border-color:#cbd5e1; }
-    .btn:active{ transform: translateY(0px); box-shadow:0 6px 12px rgba(2,6,23,.08); }
-    .btn.primary{
-      border-color:rgba(37,99,235,.25);
-      background: linear-gradient(180deg, rgba(37,99,235,.12), rgba(37,99,235,.06));
-    }
-    .btn.danger{
-      border-color:rgba(239,68,68,.25);
-      background: linear-gradient(180deg, rgba(239,68,68,.10), rgba(239,68,68,.05));
-    }
-    .btn.ok{
-      border-color:rgba(22,163,74,.25);
-      background: linear-gradient(180deg, rgba(22,163,74,.10), rgba(22,163,74,.05));
-    }
+    .btn.primary{ border-color:rgba(37,99,235,.25); background: rgba(37,99,235,.08); }
+    .btn.ok{ border-color:rgba(22,163,74,.25); background: rgba(22,163,74,.08); }
+    .btn.danger{ border-color:rgba(239,68,68,.25); background: rgba(239,68,68,.08); }
 
-    main .wrap{
-      padding-top:18px;
-      padding-bottom:28px;
-    }
+    main .wrap{ padding-top:18px; padding-bottom:28px; }
 
     .grid{
       display:grid;
-      grid-template-columns: 340px 1fr;
+      grid-template-columns: 360px 1fr;
       gap:14px;
     }
     @media (max-width: 980px){
@@ -138,9 +112,7 @@
       border-top-left-radius:var(--r);
       border-top-right-radius:var(--r);
     }
-    .panel{
-      padding:12px 14px 14px;
-    }
+    .panel{ padding:12px 14px 14px; }
 
     label{
       display:block;
@@ -148,8 +120,7 @@
       color:var(--muted);
       margin:10px 0 6px;
     }
-
-    select, input[type="date"], input[type="number"]{
+    select, input[type="number"]{
       width:100%;
       padding:10px 10px;
       border-radius:12px;
@@ -165,53 +136,8 @@
       box-shadow:0 0 0 6px var(--focus);
     }
 
-    .row2{
-      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
-    }
-    .row3{
-      display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;
-    }
-    @media(max-width:420px){
-      .row2, .row3{ grid-template-columns:1fr; }
-    }
-
-    .mini{
-      font-size:12px;
-      color:var(--muted);
-      margin-top:8px;
-      line-height:1.35;
-    }
-
-    .toggle{
-      display:flex; align-items:center; gap:8px; margin-top:8px;
-      user-select:none;
-    }
-    .toggle input{ width:auto; }
-    .toggle span{ font-size:12px; color:var(--text); font-weight:600; }
-
-    .status{
-      margin-top:10px;
-      padding:10px 10px;
-      border-radius:12px;
-      border:1px dashed #cbd5e1;
-      background: #f8fafc;
-      font-size:12px;
-      color:var(--muted);
-    }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid var(--chipBorder);
-      background:var(--chip);
-      font-size:12px;
-      font-weight:700;
-      margin:6px 8px 0 0;
-    }
-    .pill b{ color:var(--text); }
-    .pill .dot{ width:8px; height:8px; border-radius:50%; background: var(--blue); }
+    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    @media(max-width:420px){ .row2{ grid-template-columns:1fr; } }
 
     .msg{
       margin-top:10px;
@@ -225,12 +151,22 @@
     }
     .msg.info{ background:var(--infoBg); border-color: rgba(37,99,235,.18); }
     .msg.ok{ background:var(--okBg); border-color: rgba(22,163,74,.18); }
-    .msg.warn{ background:var(--warnBg); border-color: rgba(239,68,68,.18); }
 
-    .tabs{
-      display:flex; gap:8px; flex-wrap:wrap;
-      padding:12px 14px 0;
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--chipBorder);
+      background:var(--chip);
+      font-size:12px;
+      font-weight:900;
+      margin:6px 8px 0 0;
     }
+    .dot{ width:8px; height:8px; border-radius:50%; background: var(--blue); }
+
+    .tabs{ display:flex; gap:8px; flex-wrap:wrap; padding:12px 14px 0; }
     .tab{
       border:1px solid var(--line);
       background:#fff;
@@ -238,7 +174,7 @@
       border-radius:12px;
       cursor:pointer;
       font-size:12px;
-      font-weight:800;
+      font-weight:900;
       color:var(--text);
       transition:.15s;
     }
@@ -247,23 +183,24 @@
       box-shadow:0 0 0 6px rgba(37,99,235,.10);
     }
 
-    .viz{
-      padding:10px 14px 14px;
-    }
-    .plot{
-      width:100%;
-      height:520px;
-    }
-    @media(max-width:980px){
-      .plot{ height:460px; }
-    }
+    .viz{ padding:10px 14px 14px; }
+    .plot{ width:100%; height:540px; }
 
-    .spinnerWrap{
-      display:flex; align-items:center; gap:10px;
-      margin-top:10px;
-      color:var(--muted);
-      font-size:12px;
+    .hidden{ display:none !important; }
+
+    .tableWrap{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
     }
+    table{ border-collapse:collapse; width:100%; font-size:12px; }
+    th, td{ padding:10px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+    th{ position:sticky; top:0; background:#f8fafc; text-align:left; font-weight:900; }
+
+    .fileBtn{ position:relative; overflow:hidden; }
+    .fileBtn input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+    .spinnerWrap{ display:flex; align-items:center; gap:10px; margin-top:10px; color:var(--muted); font-size:12px; }
     .spinner{
       width:16px; height:16px;
       border-radius:50%;
@@ -272,42 +209,6 @@
       animation: spin 1s linear infinite;
     }
     @keyframes spin{ to{ transform:rotate(360deg); } }
-
-    .hidden{ display:none !important; }
-
-    .fileBtn{
-      position:relative;
-      overflow:hidden;
-    }
-    .fileBtn input[type=file]{
-      position:absolute;
-      inset:0;
-      opacity:0;
-      cursor:pointer;
-    }
-
-    .tableWrap{
-      overflow:auto;
-      border:1px solid var(--line);
-      border-radius:14px;
-    }
-    table{
-      border-collapse:collapse;
-      width:100%;
-      font-size:12px;
-    }
-    th, td{
-      padding:10px 10px;
-      border-bottom:1px solid var(--line);
-      white-space:nowrap;
-    }
-    th{
-      position:sticky; top:0;
-      background:#f8fafc;
-      text-align:left;
-      font-weight:900;
-      color:#0f172a;
-    }
   </style>
 </head>
 
@@ -318,8 +219,8 @@
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
-          <h1>PLAC Cáceres — Painel Climático Interativo</h1>
-          <p>Dados diários (ERA5-Land via GEE) • estatística, tendências e comparações</p>
+          <h1>PLAC Cáceres — Painel Climático (Mensal/Anual)</h1>
+          <p>Indicadores chave • leitura simples para leigos + precisão para técnicos</p>
         </div>
       </div>
 
@@ -336,40 +237,38 @@
   <div class="wrap">
     <div class="grid">
 
-      <!-- controls -->
+      <!-- CONTROLES -->
       <div class="card">
         <h2>Controles</h2>
         <div class="panel">
-
-          <label>Município (comparação até 5)</label>
+          <label>Municípios (comparação até 5)</label>
           <select id="selCities" size="5" multiple style="height:110px;"></select>
 
           <div class="row2" style="margin-top:10px;">
-            <button class="btn fileBtn primary" id="btnAddCity">
-              Adicionar município (CSV)
+            <button class="btn fileBtn primary">
+              Adicionar cidade (CSV.GZ)
               <input id="fileCity" type="file" accept=".csv,.gz,.csv.gz" />
             </button>
             <button class="btn danger" id="btnRemoveCity">Remover (exceto Cáceres)</button>
           </div>
 
-          <div class="mini">
-            Dica: para comparar outros municípios, exporte do GEE com a mesma estrutura e carregue aqui.
+          <div class="msg info">
+            <b>Formato do arquivo para upload:</b> igual ao de Cáceres (mensal+anual, colunas iguais).
+            Assim o painel compara cidades para orientar políticas públicas.
           </div>
 
-          <label>Variável principal</label>
+          <label>Escala</label>
+          <select id="selScale">
+            <option value="monthly">Mensal</option>
+            <option value="annual">Anual</option>
+          </select>
+
+          <label>Variável (indicador)</label>
           <select id="selVar"></select>
 
           <div class="row2">
             <div>
-              <label>Agregação temporal</label>
-              <select id="selAgg">
-                <option value="daily">Diário</option>
-                <option value="monthly">Mensal</option>
-                <option value="yearly">Anual</option>
-              </select>
-            </div>
-            <div>
-              <label>Resumo no período</label>
+              <label>Como resumir</label>
               <select id="selReducer">
                 <option value="auto">Auto (recomendado)</option>
                 <option value="mean">Média</option>
@@ -378,37 +277,26 @@
                 <option value="max">Máximo</option>
               </select>
             </div>
-          </div>
-
-          <div class="row2">
             <div>
-              <label>Início</label>
-              <input type="date" id="dateStart" />
+              <label>Defasagem (lag) p/ Dispersão</label>
+              <select id="selLag">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="6">6</option>
+                <option value="12">12</option>
+              </select>
             </div>
-            <div>
-              <label>Fim</label>
-              <input type="date" id="dateEnd" />
-            </div>
           </div>
 
-          <div class="toggle">
-            <input type="checkbox" id="chkHideSnow" checked />
-            <span>Ocultar neve/gelo</span>
-          </div>
+          <div id="varDesc" class="msg info">Carregando descrições…</div>
 
-          <div id="varDesc" class="msg info">Carregando descrição da variável…</div>
-
-          <div class="msg ok" id="trendBox">Tendência: calculada automaticamente (Mann-Kendall + Sen).</div>
-
-          <div class="spinnerWrap" id="spinnerBox">
-            <div class="spinner"></div>
-            <div id="spinnerText">Carregando…</div>
-          </div>
+          <div id="kpiBox" class="msg ok"></div>
 
           <hr style="border:none;border-top:1px solid var(--line);margin:14px 0;">
 
-          <div style="font-weight:900; font-size:12px; margin-bottom:6px;">Comparação entre variáveis</div>
-
+          <div style="font-weight:900; font-size:12px; margin-bottom:6px;">Dispersão (comparar 2 variáveis)</div>
           <div class="row2">
             <div>
               <label>Variável X</label>
@@ -420,22 +308,16 @@
             </div>
           </div>
 
-          <label>Defasagem para Y (lags)</label>
-          <select id="selLag">
-            <option value="0">0</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="6">6</option>
-            <option value="12">12</option>
-          </select>
+          <div class="spinnerWrap" id="spinnerBox">
+            <div class="spinner"></div>
+            <div id="spinnerText">Carregando…</div>
+          </div>
 
-          <div class="status" id="statusBox">Pronto.</div>
-
+          <div class="msg" id="statusBox">Pronto.</div>
         </div>
       </div>
 
-      <!-- viz -->
+      <!-- VISUALIZAÇÕES -->
       <div class="card">
         <div class="tabs">
           <button class="tab active" data-tab="ts">Série temporal</button>
@@ -446,6 +328,7 @@
 
         <div class="viz">
           <div id="plot" class="plot"></div>
+
           <div id="tablePane" class="hidden">
             <div class="tableWrap">
               <table id="tbl"></table>
@@ -459,72 +342,85 @@
 </main>
 
 <script>
-/* ==========================================
-   Config
-========================================== */
+/* =========================
+   CONFIG
+========================= */
 const DEFAULT_CITY = "Cáceres";
-const DATA_URL = "data/caceres_era5land_daily.csv.gz";
+const DATA_URL = "data/caceres_keyvars_monthly_annual.csv.gz";
 
-/* ==========================================
-   State
-========================================== */
+/* =========================
+   VARS (dicionário didático)
+========================= */
+const VAR_META = {
+  temperature_2m: {label:"Temperatura média do ar", unit:"°C", kind:"mean",
+    meaning:"Mostra o aquecimento médio. Útil para saúde, energia, agricultura e conforto térmico."},
+  temperature_2m_max: {label:"Temperatura máxima (extremos)", unit:"°C", kind:"max",
+    meaning:"Indicador direto de ondas de calor e estresse térmico."},
+  temperature_2m_min: {label:"Temperatura mínima (noites)", unit:"°C", kind:"min",
+    meaning:"Noites quentes/frias mudam consumo de energia, saúde e dinâmica ecológica."},
+  dewpoint_temperature_2m: {label:"Ponto de orvalho", unit:"°C", kind:"mean",
+    meaning:"Resume quanta umidade existe no ar. Ajuda a explicar sensação térmica e risco de secura."},
+  relative_humidity_2m: {label:"Umidade relativa (derivada)", unit:"%", kind:"mean",
+    meaning:"Ar mais seco piora conforto térmico, aumenta risco de fogo e afeta saúde respiratória."},
+  vpd_kpa: {label:"Déficit de pressão de vapor (VPD)", unit:"kPa", kind:"mean",
+    meaning:"Mede o quanto o ar 'puxa' água das plantas e do solo. Alto VPD = maior estresse hídrico."},
+
+  total_precipitation_sum: {label:"Precipitação acumulada", unit:"mm", kind:"sum",
+    meaning:"Base para entender seca/cheia, recarga, abastecimento e risco de incêndios."},
+  runoff_sum: {label:"Escoamento (runoff)", unit:"mm", kind:"sum",
+    meaning:"Mostra água que escoa (potencial de enxurradas/erosão) e resposta hidrológica."},
+
+  potential_evaporation_sum: {label:"Evaporação potencial", unit:"mm", kind:"sum",
+    meaning:"Demanda atmosférica por água. Quando sobe, a seca tende a piorar mesmo com chuva igual."},
+  evaporation_from_bare_soil_sum: {label:"Evaporação do solo exposto", unit:"mm", kind:"sum",
+    meaning:"Perda de água direto do solo. Importante para manejo do solo e conservação."},
+  evaporation_from_the_top_of_canopy_sum: {label:"Evaporação do dossel", unit:"mm", kind:"sum",
+    meaning:"Água que evapora da copa após chuva. Ajuda a entender interceptação e microclima."},
+  evaporation_from_vegetation_transpiration_sum: {label:"Transpiração da vegetação", unit:"mm", kind:"sum",
+    meaning:"Água usada pelas plantas. Indica funcionamento ecológico e conforto térmico por vegetação."},
+
+  volumetric_soil_water_layer_1: {label:"Umidade do solo (camada superficial)", unit:"m³/m³", kind:"mean",
+    meaning:"Mostra quanta água existe no solo próximo à superfície — chave para agricultura e fogo."},
+  soil_temperature_level_1: {label:"Temperatura do solo (superficial)", unit:"°C", kind:"mean",
+    meaning:"Afeta germinação, microbiologia do solo, emissões e estresse em vegetação."},
+
+  surface_solar_radiation_downwards_sum: {label:"Radiação solar incidente", unit:"MJ/m²", kind:"sum",
+    meaning:"Energia que chega do sol. Influencia evapotranspiração, calor e produtividade."},
+  surface_net_solar_radiation_sum: {label:"Radiação solar líquida", unit:"MJ/m²", kind:"sum",
+    meaning:"Energia efetiva disponível na superfície para aquecer e evaporar água."},
+
+  wind_speed_10m: {label:"Velocidade do vento (10m)", unit:"m/s", kind:"mean",
+    meaning:"Vento espalha fumaça, influencia fogo e resfriamento/aquecimento local."}
+};
+
+/* =========================
+   STATE
+========================= */
 const state = {
-  datasets: {},  // city -> rows
+  datasets: {}, // city -> rows (já mensal/anual)
   vars: [],
   activeTab: "ts",
 };
 
-/* ==========================================
-   Variable dictionary (friendly labels + units + meaning)
-   (Você pode ampliar depois; o painel funciona mesmo sem)
-========================================== */
-const VAR_META = {
-  temperature_2m: {label:"Temperatura do ar (2m)", unit:"°C", meaning:"Temperatura próxima à superfície. Relevante para estresse térmico, saúde, energia e agricultura."},
-  temperature_2m_max: {label:"Temperatura máxima (2m)", unit:"°C", meaning:"Extremos de calor. Importante para ondas de calor, mortalidade, produtividade e conforto térmico."},
-  temperature_2m_min: {label:"Temperatura mínima (2m)", unit:"°C", meaning:"Noites quentes/frias. Afeta saúde, demanda energética e processos ecológicos."},
-  dewpoint_temperature_2m: {label:"Ponto de orvalho (2m)", unit:"°C", meaning:"Indica umidade do ar. Útil para conforto térmico, risco de mofo, e dinâmica de evaporação."},
-  total_precipitation_sum: {label:"Precipitação", unit:"mm", meaning:"Chuva acumulada. Base para entender seca/cheia, disponibilidade hídrica e risco de incêndios."},
-  surface_pressure: {label:"Pressão na superfície", unit:"hPa", meaning:"Relacionado a sistemas atmosféricos e variabilidade do tempo."},
-  u_component_of_wind_10m: {label:"Vento (U) 10m", unit:"m/s", meaning:"Componente zonal do vento. Influencia dispersão de poluentes e propagação de fogo."},
-  v_component_of_wind_10m: {label:"Vento (V) 10m", unit:"m/s", meaning:"Componente meridional do vento. Influencia dispersão e propagação de fogo."},
-};
-
-/* ==========================================
-   Helpers: UI
-========================================== */
+/* =========================
+   UI helpers
+========================= */
 function setSpinner(on, text){
   const box = document.getElementById("spinnerBox");
   const t = document.getElementById("spinnerText");
   if(on){
     box.classList.remove("hidden");
     if(text) t.textContent = text;
-  }else{
-    box.classList.add("hidden");
-  }
+  } else box.classList.add("hidden");
 }
+function setStatus(msg){ document.getElementById("statusBox").textContent = msg; }
+function fmt(n, d=2){ if(n==null || Number.isNaN(n)) return "—"; return Number(n).toFixed(d); }
+function dot(color){ return `<span class="dot" style="background:${color}"></span>`; }
+function isNum(x){ return typeof x==="number" && !Number.isNaN(x); }
 
-function setStatus(msg){
-  document.getElementById("statusBox").textContent = msg;
-}
-
-function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
-
-function fmt(n, digits=2){
-  if(n===null || n===undefined || Number.isNaN(n)) return "—";
-  return Number(n).toFixed(digits);
-}
-
-function toISODate(d){
-  const z = new Date(d);
-  const y = z.getFullYear();
-  const m = String(z.getMonth()+1).padStart(2,"0");
-  const da = String(z.getDate()).padStart(2,"0");
-  return `${y}-${m}-${da}`;
-}
-
-/* ==========================================
-   Loaders: .gz
-========================================== */
+/* =========================
+   Load .gz text
+========================= */
 async function loadGzText(url){
   const resp = await fetch(url, {cache:"no-cache"});
   if(!resp.ok) throw new Error(`Não consegui carregar: ${url} (${resp.status})`);
@@ -533,137 +429,77 @@ async function loadGzText(url){
   return new TextDecoder("utf-8").decode(decompressed);
 }
 
-function guessIsKelvin(varName){
-  return /temperature|dewpoint/i.test(varName);
-}
-
-function kToC(k){ return k - 273.15; }
-
-function parseRows(rows){
-  // normalize + add date fields
-  const out = [];
-  for(const r of rows){
-    if(!r) continue;
-    const dtRaw = r.date ?? r.Date ?? r.time ?? r.Time ?? r.datetime ?? r.Datetime ?? r.timestamp ?? r.Timestamp;
-    // allow formats
-    const dt = dtRaw ? new Date(dtRaw) : null;
-
-    // fallback: if first column is date-like
-    if(!dt || isNaN(dt.getTime())){
-      // try find any key with date-ish
-      const k = Object.keys(r).find(x=>/date|time/i.test(x));
-      if(k){
-        const d2 = new Date(r[k]);
-        if(!isNaN(d2.getTime())){
-          out.push(normalizeRecord(r, d2));
-        }
-      }
-      continue;
-    }
-    out.push(normalizeRecord(r, dt));
-  }
-  // sort
-  out.sort((a,b)=>a.__dt - b.__dt);
-  return out;
-}
-
-function normalizeRecord(r, dt){
-  const o = {...r};
-  o.__dt = dt;
-  o.__date = toISODate(dt);
-  o.__year = dt.getFullYear();
-  o.__month = dt.getMonth()+1;
-
-  // numeric conversions for typical GEE/ERA outputs: Kelvin->C for temps
-  for(const k of Object.keys(o)){
-    if(k.startsWith("__")) continue;
-    if(o[k]===null || o[k]===undefined) continue;
-    if(typeof o[k] !== "number") continue;
-    if(guessIsKelvin(k) && o[k] > 100){
-      o[k] = kToC(o[k]);
-    }
-    // precipitation: ERA5-land often in meters; if values are tiny, convert to mm
-    if(/precipitation/i.test(k) && o[k] <= 2){
-      // heuristic: meters -> mm
-      o[k] = o[k] * 1000;
-    }
-    // pressure: Pa -> hPa if huge
-    if(/pressure/i.test(k) && o[k] > 2000){
-      o[k] = o[k] / 100;
-    }
-  }
-  return o;
-}
-
 async function loadCityFromCSVText(cityName, csvText){
   const parsed = Papa.parse(csvText, {header:true, dynamicTyping:true, skipEmptyLines:true});
-  const rows = parseRows(parsed.data);
+  const rows = parsed.data || [];
   if(!rows.length) throw new Error("CSV sem linhas válidas.");
+
+  // normaliza tipos
+  for(const r of rows){
+    r.period = String(r.period);
+    r.scale = String(r.scale);
+    // cria dt para plot
+    if(r.scale==="monthly"){
+      // period: YYYY-MM
+      r.__dt = new Date(r.period + "-01T00:00:00");
+      const m = Number(r.period.slice(5,7));
+      r.__month = m;
+      r.__year = Number(r.period.slice(0,4));
+    } else {
+      // annual: YYYY
+      r.__dt = new Date(r.period + "-01-01T00:00:00");
+      r.__month = null;
+      r.__year = Number(r.period);
+    }
+  }
+
   state.datasets[cityName] = rows;
 
-  // update vars from union
-  const cols = Object.keys(rows[0]).filter(k=>!k.startsWith("__"));
-  const core = cols.filter(c=>c!=="__dt" && c!=="__date" && c!=="__year" && c!=="__month");
-  const set = new Set([...state.vars, ...core]);
-  state.vars = [...set].filter(v=>!v.startsWith("__"));
+  // vars = interseção com VAR_META (só o que a gente quer mostrar)
+  const cols = Object.keys(rows[0]);
+  const wanted = Object.keys(VAR_META).filter(v => cols.includes(v));
+  state.vars = wanted;
 }
 
-/* ==========================================
+/* =========================
    Build selects
-========================================== */
+========================= */
 function buildCitySelect(){
   const sel = document.getElementById("selCities");
-  const cities = Object.keys(state.datasets);
   sel.innerHTML = "";
-  for(const c of cities){
+  for(const c of Object.keys(state.datasets)){
     const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
+    opt.value = c; opt.textContent = c;
     if(c===DEFAULT_CITY) opt.selected = true;
     sel.appendChild(opt);
   }
 }
 
-function isSnowIceVar(v){
-  return /(snow|ice)/i.test(v);
-}
-
 function buildVarSelects(){
-  const hideSnow = document.getElementById("chkHideSnow")?.checked ?? true;
-
-  const vars = state.vars
-    .filter(v=>v && typeof v==="string")
-    .filter(v=>!hideSnow || !isSnowIceVar(v))
-    .sort((a,b)=>a.localeCompare(b));
-
+  const vars = state.vars.slice();
   const selVar = document.getElementById("selVar");
   const selX = document.getElementById("selX");
   const selY = document.getElementById("selY");
 
-  const prevVar = selVar.value;
-  const prevX = selX.value;
-  const prevY = selY.value;
+  const prevV = selVar.value, prevX = selX.value, prevY = selY.value;
 
   function fill(sel){
     sel.innerHTML = "";
     for(const v of vars){
       const m = VAR_META[v];
-      const label = m ? `${m.label} (${v})` : v;
       const opt = document.createElement("option");
       opt.value = v;
-      opt.textContent = label;
+      opt.textContent = `${m.label} (${m.unit})`;
       sel.appendChild(opt);
     }
   }
 
   fill(selVar); fill(selX); fill(selY);
 
-  // restore if possible
-  if(vars.includes(prevVar)) selVar.value = prevVar;
+  if(vars.includes(prevV)) selVar.value = prevV;
   if(vars.includes(prevX)) selX.value = prevX;
   if(vars.includes(prevY)) selY.value = prevY;
 
-  // default picks if empty
   if(!selVar.value && vars.length) selVar.value = vars[0];
   if(!selX.value && vars.length) selX.value = vars[0];
   if(!selY.value && vars.length) selY.value = vars[Math.min(1, vars.length-1)];
@@ -675,80 +511,37 @@ function updateVarDesc(){
   const v = document.getElementById("selVar").value;
   const box = document.getElementById("varDesc");
   const meta = VAR_META[v];
-  if(meta){
-    box.innerHTML = `<b>${meta.label}</b> • unidade: <b>${meta.unit}</b><br>${meta.meaning}`;
-  }else{
-    box.innerHTML = `<b>${v}</b><br>Variável do conjunto ERA5-Land/GEE. Você pode adicionar descrição no dicionário VAR_META.`;
-  }
+  box.innerHTML = `<b>${meta.label}</b> • unidade: <b>${meta.unit}</b><br>${meta.meaning}`;
 }
 
-/* ==========================================
-   Aggregations
-========================================== */
-function groupKey(row, agg){
-  if(agg==="daily") return row.__date;
-  if(agg==="monthly") return `${row.__year}-${String(row.__month).padStart(2,"0")}`;
-  if(agg==="yearly") return String(row.__year);
-  return row.__date;
+/* =========================
+   Select helpers
+========================= */
+function getSelectedCities(){
+  const sel = document.getElementById("selCities");
+  const arr = [...sel.selectedOptions].map(o=>o.value);
+  return (arr.length ? arr : [DEFAULT_CITY]).slice(0,5);
+}
+function getScale(){ return document.getElementById("selScale").value; }
+function chooseReducer(varName){
+  const sel = document.getElementById("selReducer").value;
+  if(sel!=="auto") return sel;
+  return VAR_META[varName].kind; // kind = mean/sum/min/max
 }
 
-function aggregateSeries(rows, varName, agg, reducer){
-  // returns [{key, dt, value}]
-  const map = new Map();
-  for(const r of rows){
-    const k = groupKey(r, agg);
-    if(!map.has(k)) map.set(k, []);
-    const val = r[varName];
-    if(typeof val === "number" && !Number.isNaN(val)) map.get(k).push(val);
-  }
-  const out = [];
-  for(const [k, arr] of map.entries()){
-    if(!arr.length) continue;
-    let v = null;
-    if(reducer==="min") v = Math.min(...arr);
-    else if(reducer==="max") v = Math.max(...arr);
-    else if(reducer==="sum") v = arr.reduce((a,b)=>a+b,0);
-    else v = arr.reduce((a,b)=>a+b,0) / arr.length;
-
-    // dt for plotting
-    let dt;
-    if(agg==="daily") dt = new Date(k);
-    else if(agg==="monthly") dt = new Date(k + "-01");
-    else dt = new Date(k + "-01-01");
-    out.push({key:k, dt, value:v});
-  }
-  out.sort((a,b)=>a.dt-b.dt);
-  return out;
+/* =========================
+   Stats: Pearson, Spearman, OLS, MK, Sen (seguro agora)
+========================= */
+function erf(x){
+  const sign = x>=0 ? 1:-1;
+  x = Math.abs(x);
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const t=1/(1+p*x);
+  const y=1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
 }
+function normalCdf(z){ return 0.5*(1+erf(z/Math.SQRT2)); }
 
-function filterByDate(rows, startISO, endISO){
-  if(!startISO && !endISO) return rows;
-  const s = startISO ? new Date(startISO) : null;
-  const e = endISO ? new Date(endISO) : null;
-  return rows.filter(r=>{
-    if(!(r.__dt instanceof Date) || isNaN(r.__dt.getTime())) return false;
-    if(s && r.__dt < s) return false;
-    if(e && r.__dt > e) return false;
-    return true;
-  });
-}
-
-function setDateLimits(){
-  const rows = state.datasets[DEFAULT_CITY] || [];
-  if(!rows.length) return;
-  const minD = rows[0].__date;
-  const maxD = rows[rows.length-1].__date;
-  const ds = document.getElementById("dateStart");
-  const de = document.getElementById("dateEnd");
-  ds.min = minD; ds.max = maxD;
-  de.min = minD; de.max = maxD;
-  ds.value = minD;
-  de.value = maxD;
-}
-
-/* ==========================================
-   Stats: correlation, OLS, Mann-Kendall, Sen slope
-========================================== */
 function pearson(x,y){
   const n = x.length;
   if(n<3) return {r:NaN};
@@ -762,9 +555,7 @@ function pearson(x,y){
   const den = Math.sqrt(dx*dy);
   return {r: den===0 ? NaN : num/den};
 }
-
 function rank(arr){
-  // average ranks for ties
   const sorted = arr.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);
   const ranks = new Array(arr.length);
   let i=0;
@@ -777,10 +568,8 @@ function rank(arr){
   }
   return ranks;
 }
-
 function spearman(x,y){
-  const rx = rank(x);
-  const ry = rank(y);
+  const rx = rank(x), ry = rank(y);
   return pearson(rx,ry);
 }
 
@@ -797,7 +586,7 @@ function olsSlope(x,y){
   const slope = sxx===0 ? NaN : sxy/sxx;
   const intercept = my - slope*mx;
 
-  // p-value for slope (approx using t distribution with normal approx)
+  // p-value normal approx
   let sse=0;
   for(let i=0;i<n;i++){
     const yhat = intercept + slope*x[i];
@@ -806,32 +595,14 @@ function olsSlope(x,y){
   const se2 = sse/(n-2);
   const seSlope = Math.sqrt(se2/sxx);
   const t = slope/seSlope;
-  // normal approximation for p-value
   const p = 2*(1 - normalCdf(Math.abs(t)));
   return {slope, intercept, p};
 }
 
-// error function approximation
-function erf(x){
-  // Abramowitz and Stegun
-  const sign = x>=0 ? 1:-1;
-  x = Math.abs(x);
-  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
-  const t=1/(1+p*x);
-  const y=1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
-  return sign*y;
-}
-
-function normalCdf(z){
-  return 0.5*(1+erf(z/Math.SQRT2));
-}
-
 function mannKendall(values){
-  // basic MK (no seasonality), with normal approximation
-  const x = values.filter(v=>typeof v==="number" && !Number.isNaN(v));
+  const x = values.filter(v=>isNum(v));
   const n = x.length;
   if(n<8) return {tau:NaN, z:NaN, p:NaN, trend:"insuficiente"};
-
   let S=0;
   for(let i=0;i<n-1;i++){
     for(let j=i+1;j<n;j++){
@@ -839,8 +610,6 @@ function mannKendall(values){
       else if(x[j]<x[i]) S--;
     }
   }
-
-  // ties
   const counts = {};
   for(const v of x){
     const key = String(v);
@@ -851,325 +620,306 @@ function mannKendall(values){
     const t = counts[k];
     if(t>1) tieSum += t*(t-1)*(2*t+5);
   }
-
   const varS = (n*(n-1)*(2*n+5) - tieSum)/18;
   const z = S>0 ? (S-1)/Math.sqrt(varS) : S<0 ? (S+1)/Math.sqrt(varS) : 0;
   const p = 2*(1 - normalCdf(Math.abs(z)));
   const tau = S / (0.5*n*(n-1));
-
   const trend = p<0.05 ? (S>0 ? "aumentando" : "diminuindo") : "sem tendência significativa";
   return {tau, z, p, trend};
 }
 
-function senSlope(series){
-  // series: [{dt,value}]
-  const vals = series.map(d=>d.value);
-  const t = series.map(d=>d.dt.getTime()/86400000); // days
+function senSlope(xTime, y){
+  // Theil-Sen: mediana das inclinações
+  const n = y.length;
   const slopes = [];
-  for(let i=0;i<vals.length-1;i++){
-    for(let j=i+1;j<vals.length;j++){
-      const dt = t[j]-t[i];
-      if(dt!==0) slopes.push((vals[j]-vals[i])/dt);
+  for(let i=0;i<n-1;i++){
+    for(let j=i+1;j<n;j++){
+      const dt = xTime[j]-xTime[i];
+      if(dt!==0) slopes.push((y[j]-y[i])/dt);
     }
   }
   slopes.sort((a,b)=>a-b);
   const mid = Math.floor(slopes.length/2);
-  const slope = slopes.length ? (slopes.length%2 ? slopes[mid] : (slopes[mid-1]+slopes[mid])/2) : NaN;
-  return slope; // per day
+  return slopes.length ? (slopes.length%2 ? slopes[mid] : (slopes[mid-1]+slopes[mid])/2) : NaN;
 }
 
-/* ==========================================
-   Charts
-========================================== */
-function plotTimeSeries(seriesByCity, varName){
+/* =========================
+   Data extraction
+========================= */
+function seriesFor(city, scale, varName, reducer){
+  const rows = (state.datasets[city]||[]).filter(r=>r.scale===scale);
+  const vals = rows.map(r=>r[varName]).filter(v=>isNum(v));
+  const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : NaN;
+  const mn = vals.length ? Math.min(...vals) : NaN;
+  const mx = vals.length ? Math.max(...vals) : NaN;
+  return {rows, vals, mean, mn, mx};
+}
+
+/* =========================
+   Plots
+========================= */
+function plotTimeSeries(scale, varName, reducer){
+  const cities = getSelectedCities();
+  const meta = VAR_META[varName];
+
+  const colors = ["#2563eb","#16a34a","#ef4444","#0ea5e9","#22c55e"];
   const traces = [];
-  const colors = [getComputedStyle(document.documentElement).getPropertyValue("--blue").trim(),
-                  getComputedStyle(document.documentElement).getPropertyValue("--green").trim(),
-                  getComputedStyle(document.documentElement).getPropertyValue("--red").trim(),
-                  getComputedStyle(document.documentElement).getPropertyValue("--blue2").trim(),
-                  getComputedStyle(document.documentElement).getPropertyValue("--green2").trim()];
   let idx=0;
 
-  for(const [city, s] of seriesByCity.entries()){
+  for(const c of cities){
+    const rows = (state.datasets[c]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
+
+    // reducer em cima da própria coluna (já agregada). Em geral: usa direto.
+    const y = rows.map(r=>r[varName]).map(v=>isNum(v)?v:null);
+    const x = rows.map(r=>r.__dt);
+
     traces.push({
-      x: s.map(d=>d.dt),
-      y: s.map(d=>d.value),
-      type: "scatter",
-      mode: "lines",
-      name: city,
-      line: {width: 2.6, color: colors[idx%colors.length]}
+      x, y,
+      type:"scatter",
+      mode:"lines",
+      name:c,
+      line:{width:2.8, color:colors[idx%colors.length]}
     });
     idx++;
   }
 
-  const meta = VAR_META[varName];
-  const yTitle = meta ? `${meta.label} (${meta.unit})` : varName;
+  const title = `${meta.label} (${meta.unit}) — ${scale==="monthly" ? "mensal" : "anual"}`;
 
-  const layout = {
-    margin:{l:55,r:20,t:40,b:45},
+  Plotly.newPlot("plot", traces, {
+    margin:{l:60,r:20,t:45,b:50},
     paper_bgcolor:"rgba(0,0,0,0)",
     plot_bgcolor:"#ffffff",
-    title: {text: yTitle, font:{size:14}},
+    title:{text:title, font:{size:14}},
     xaxis:{title:"Tempo", showgrid:true, gridcolor:"#eef2f7"},
-    yaxis:{title:yTitle, showgrid:true, gridcolor:"#eef2f7"},
+    yaxis:{title:`${meta.label} (${meta.unit})`, showgrid:true, gridcolor:"#eef2f7"},
     legend:{orientation:"h", y:-0.18},
-  };
-
-  Plotly.newPlot("plot", traces, layout, {responsive:true, displaylogo:false});
+  }, {responsive:true, displaylogo:false});
 }
 
-function plotBoxplotByMonth(rows, varName){
-  // build per month arrays
-  const m = new Map();
-  for(let mm=1;mm<=12;mm++) m.set(mm, []);
-  for(const r of rows){
-    const v = r[varName];
-    if(typeof v==="number" && !Number.isNaN(v)){
-      m.get(r.__month).push(v);
+function plotBoxplotMonthly(varName){
+  // só faz sentido em monthly
+  const cities = getSelectedCities();
+  const meta = VAR_META[varName];
+
+  const traces = [];
+  for(const c of cities){
+    const rows = (state.datasets[c]||[]).filter(r=>r.scale==="monthly");
+    const buckets = new Map();
+    for(let m=1;m<=12;m++) buckets.set(m, []);
+    for(const r of rows){
+      const v = r[varName];
+      if(isNum(v)) buckets.get(r.__month).push(v);
+    }
+    for(let m=1;m<=12;m++){
+      traces.push({
+        y: buckets.get(m),
+        type:"box",
+        name: `${c} — ${String(m).padStart(2,"0")}`,
+        boxpoints:false
+      });
     }
   }
-  const traces = [];
-  for(let mm=1;mm<=12;mm++){
-    traces.push({
-      y: m.get(mm),
-      type:"box",
-      name: String(mm).padStart(2,"0"),
-      boxpoints:false, // no outliers/points
-      whiskerwidth:0.8
-    });
-  }
-  const meta = VAR_META[varName];
-  const yTitle = meta ? `${meta.label} (${meta.unit})` : varName;
 
   Plotly.newPlot("plot", traces, {
-    margin:{l:55,r:20,t:40,b:45},
+    margin:{l:60,r:20,t:45,b:50},
     paper_bgcolor:"rgba(0,0,0,0)",
     plot_bgcolor:"#ffffff",
-    title:{text:`Boxplot mensal • ${yTitle}`, font:{size:14}},
-    xaxis:{title:"Mês", showgrid:false},
-    yaxis:{title:yTitle, showgrid:true, gridcolor:"#eef2f7"},
+    title:{text:`Boxplot por mês — ${meta.label} (${meta.unit})`, font:{size:14}},
+    xaxis:{title:"Cidade — Mês", showgrid:false},
+    yaxis:{title:`${meta.label} (${meta.unit})`, showgrid:true, gridcolor:"#eef2f7"},
   }, {responsive:true, displaylogo:false});
 }
 
-function plotScatter(x, y, xName, yName, fit){
-  const metaX = VAR_META[xName];
-  const metaY = VAR_META[yName];
-  const xTitle = metaX ? `${metaX.label} (${metaX.unit})` : xName;
-  const yTitle = metaY ? `${metaY.label} (${metaY.unit})` : yName;
+function plotScatter(scale, xVar, yVar, lag){
+  const c = getSelectedCities()[0] || DEFAULT_CITY;
+  const rows = (state.datasets[c]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
 
-  const trace = {
-    x, y,
-    type:"scatter",
-    mode:"markers",
-    marker:{size:7, opacity:0.8, color:getComputedStyle(document.documentElement).getPropertyValue("--blue").trim()},
-    name:"Dados"
-  };
+  const xs = rows.map(r=>r[xVar]);
+  const ys = rows.map(r=>r[yVar]);
+  const ts = rows.map(r=>r.__dt.getTime()/86400000);
 
-  const traces = [trace];
-
-  if(fit && isFinite(fit.slope)){
-    const minX = Math.min(...x), maxX = Math.max(...x);
-    const xs = [minX, maxX];
-    const ys = xs.map(v=>fit.intercept + fit.slope*v);
-    traces.push({
-      x: xs, y: ys,
-      type:"scatter", mode:"lines",
-      line:{width:3, color:getComputedStyle(document.documentElement).getPropertyValue("--red").trim()},
-      name:"Regressão (OLS)"
-    });
+  // apply lag on Y (shift forward in time)
+  let x=[], y=[], t=[];
+  for(let i=0;i<rows.length;i++){
+    const j = i + lag;
+    if(j>=rows.length) break;
+    const xv = xs[i], yv = ys[j];
+    if(isNum(xv) && isNum(yv)){
+      x.push(xv); y.push(yv); t.push(ts[i]);
+    }
   }
 
+  const pr = pearson(x,y);
+  const sp = spearman(x,y);
+  const fit = olsSlope(x,y);
+  const r2 = pr.r*pr.r;
+
+  const metaX = VAR_META[xVar], metaY = VAR_META[yVar];
+
+  // regression line
+  const minX = Math.min(...x), maxX = Math.max(...x);
+  const lineX = [minX, maxX];
+  const lineY = lineX.map(v => fit.intercept + fit.slope*v);
+
+  const traces = [
+    {x, y, type:"scatter", mode:"markers", name:"Dados",
+     marker:{size:7, opacity:0.8, color:"#2563eb"}},
+    {x:lineX, y:lineY, type:"scatter", mode:"lines", name:"Regressão (OLS)",
+     line:{width:3, color:"#ef4444"}}
+  ];
+
+  setStatus(`Dispersão (${c}, ${scale}) • Pearson r=${fmt(pr.r,3)} (R²=${fmt(r2,3)}) • Spearman ρ=${fmt(sp.r,3)} • p≈${fmt(fit.p,4)} • n=${x.length}`);
+
   Plotly.newPlot("plot", traces, {
-    margin:{l:55,r:20,t:40,b:45},
+    margin:{l:60,r:20,t:45,b:50},
     paper_bgcolor:"rgba(0,0,0,0)",
     plot_bgcolor:"#ffffff",
-    title:{text:`Dispersão: ${xTitle} × ${yTitle}`, font:{size:14}},
-    xaxis:{title:xTitle, showgrid:true, gridcolor:"#eef2f7"},
-    yaxis:{title:yTitle, showgrid:true, gridcolor:"#eef2f7"},
+    title:{text:`Dispersão: ${metaX.label} × ${metaY.label} (lag Y = ${lag})`, font:{size:14}},
+    xaxis:{title:`${metaX.label} (${metaX.unit})`, showgrid:true, gridcolor:"#eef2f7"},
+    yaxis:{title:`${metaY.label} (${metaY.unit})`, showgrid:true, gridcolor:"#eef2f7"},
     legend:{orientation:"h", y:-0.18},
   }, {responsive:true, displaylogo:false});
 }
 
-/* ==========================================
-   Table
-========================================== */
-function renderTable(series){
+function renderTable(scale, varName){
+  const c = getSelectedCities()[0] || DEFAULT_CITY;
+  const rows = (state.datasets[c]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
+
   const tbl = document.getElementById("tbl");
   tbl.innerHTML = "";
-  const thead = document.createElement("thead");
-  thead.innerHTML = `<tr><th>Data</th><th>Valor</th></tr>`;
-  tbl.appendChild(thead);
+  tbl.innerHTML = `<thead><tr><th>Cidade</th><th>Escala</th><th>Período</th><th>${VAR_META[varName].label} (${VAR_META[varName].unit})</th></tr></thead>`;
   const tbody = document.createElement("tbody");
-  const maxRows = 1000;
-  for(let i=0;i<Math.min(maxRows, series.length);i++){
-    const r = series[i];
+  for(const r of rows){
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${toISODate(r.dt)}</td><td>${fmt(r.value,3)}</td>`;
+    tr.innerHTML = `<td>${c}</td><td>${scale}</td><td>${r.period}</td><td>${fmt(r[varName],3)}</td>`;
     tbody.appendChild(tr);
   }
   tbl.appendChild(tbody);
+  setStatus(`Tabela (${c}) • ${rows.length} linhas`);
 }
 
-/* ==========================================
-   Main recalculation
-========================================== */
-function getSelectedCities(){
-  const sel = document.getElementById("selCities");
-  const arr = [...sel.selectedOptions].map(o=>o.value);
-  if(!arr.length && Object.keys(state.datasets).length) return [DEFAULT_CITY];
-  // cap at 5
-  return arr.slice(0,5);
-}
-
-function chooseReducer(auto, varName){
-  if(auto!=="auto") return auto;
-  if(/precipitation|rain|total_precipitation/i.test(varName)) return "sum";
-  return "mean";
-}
-
-function recalc(){
-  updateVarDesc();
-
+/* =========================
+   KPI + Tendência
+========================= */
+function updateKPI(scale, varName){
   const cities = getSelectedCities();
-  const varName = document.getElementById("selVar").value;
-  const agg = document.getElementById("selAgg").value;
-  const reducerSel = document.getElementById("selReducer").value;
-  const reducer = chooseReducer(reducerSel, varName);
+  const meta = VAR_META[varName];
+  const reducer = chooseReducer(varName);
 
-  const startISO = document.getElementById("dateStart").value;
-  const endISO = document.getElementById("dateEnd").value;
+  const firstCity = cities[0] || DEFAULT_CITY;
+  const rows = (state.datasets[firstCity]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
 
-  const seriesByCity = new Map();
-  for(const c of cities){
-    const rows0 = state.datasets[c] || [];
-    const rows = filterByDate(rows0, startISO, endISO);
-    const series = aggregateSeries(rows, varName, agg, reducer);
-    seriesByCity.set(c, series);
+  const y = rows.map(r=>r[varName]).filter(v=>isNum(v));
+  const mean = y.length ? y.reduce((a,b)=>a+b,0)/y.length : NaN;
+  const mn = y.length ? Math.min(...y) : NaN;
+  const mx = y.length ? Math.max(...y) : NaN;
+
+  // Trend time axis: years for annual, months for monthly (in years)
+  const tYears = rows.map(r=>{
+    if(scale==="annual") return Number(r.period);
+    // monthly: year + (month-0.5)/12
+    const yr = Number(r.period.slice(0,4));
+    const mo = Number(r.period.slice(5,7));
+    return yr + (mo-0.5)/12;
+  });
+  const yAll = rows.map(r=>r[varName]).filter(v=>isNum(v));
+
+  // align arrays
+  const t = [];
+  const yy = [];
+  for(let i=0;i<rows.length;i++){
+    const v = rows[i][varName];
+    if(isNum(v)){
+      t.push(tYears[i]);
+      yy.push(v);
+    }
   }
 
-  // KPI + trend only for first city selected
-  const firstCity = cities[0] || DEFAULT_CITY;
-  const firstSeries = seriesByCity.get(firstCity) || [];
-  const vals = firstSeries.map(d=>d.value).filter(v=>typeof v==="number" && !Number.isNaN(v));
-  const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : NaN;
-  const mn = vals.length ? Math.min(...vals) : NaN;
-  const mx = vals.length ? Math.max(...vals) : NaN;
+  let mk = mannKendall(yy);
+  let sen = NaN;
+  if(yy.length >= 10 && yy.length <= 1200){
+    sen = senSlope(t, yy); // unidade por ano (porque t está em ano)
+  }
 
-  // MK + Sen
-  const mk = mannKendall(vals);
-  const sen = firstSeries.length ? senSlope(firstSeries) : NaN;
+  const fit = olsSlope(t, yy); // slope por ano
+  const trendTxt =
+    (mk && isNum(mk.p))
+      ? `MK: ${mk.trend} (p=${fmt(mk.p,4)}, τ=${fmt(mk.tau,3)})`
+      : `MK: insuficiente`;
 
-  const meta = VAR_META[varName];
-  const unit = meta ? meta.unit : "";
+  const senTxt = isNum(sen) ? `• Sen ≈ ${fmt(sen,3)} ${meta.unit}/ano` : `• Sen: —`;
+  const olsTxt = isNum(fit.slope) ? `• OLS ≈ ${fmt(fit.slope,3)} ${meta.unit}/ano (p≈${fmt(fit.p,4)})` : ``;
 
-  document.getElementById("trendBox").innerHTML =
-    `<span class="pill"><span class="dot" style="background:var(--blue)"></span><b>Média</b> ${fmt(mean,2)} ${unit}</span>`+
-    `<span class="pill"><span class="dot" style="background:var(--green)"></span><b>Mín</b> ${fmt(mn,2)} ${unit}</span>`+
-    `<span class="pill"><span class="dot" style="background:var(--red)"></span><b>Máx</b> ${fmt(mx,2)} ${unit}</span><br>`+
-    `<b>Tendência (Mann-Kendall)</b>: ${mk.trend} • p=${fmt(mk.p,4)} • τ=${fmt(mk.tau,3)} • <b>Sen</b> ~ ${fmt(sen*365.25,3)} ${unit}/ano`;
+  document.getElementById("kpiBox").innerHTML =
+    `<span class="pill">${dot("var(--blue)")}<b>Média</b> ${fmt(mean,2)} ${meta.unit}</span>` +
+    `<span class="pill">${dot("var(--green)")}<b>Mín</b> ${fmt(mn,2)} ${meta.unit}</span>` +
+    `<span class="pill">${dot("var(--red)")}<b>Máx</b> ${fmt(mx,2)} ${meta.unit}</span><br>` +
+    `<b>Tendência (${scale==="monthly" ? "mensal" : "anual"})</b>: ${trendTxt} ${senTxt} ${olsTxt}`;
+}
+
+/* =========================
+   Main recalc
+========================= */
+function recalc(){
+  const scale = getScale();
+  const varName = document.getElementById("selVar").value;
+  const reducer = chooseReducer(varName);
+  const tab = state.activeTab;
+
+  updateVarDesc();
+  updateKPI(scale, varName);
 
   const tablePane = document.getElementById("tablePane");
   const plotDiv = document.getElementById("plot");
 
-  if(state.activeTab==="ts"){
+  if(tab==="ts"){
     tablePane.classList.add("hidden");
     plotDiv.classList.remove("hidden");
-    plotTimeSeries(seriesByCity, varName);
-  }
-  else if(state.activeTab==="box"){
+    plotTimeSeries(scale, varName, reducer);
+    setStatus(`Série temporal • ${scale} • ${VAR_META[varName].label}`);
+  } else if(tab==="box"){
+    // boxplot somente mensal
+    if(scale!=="monthly"){
+      setStatus("Boxplot só está disponível em escala mensal.");
+      document.getElementById("selScale").value = "monthly";
+    }
     tablePane.classList.add("hidden");
     plotDiv.classList.remove("hidden");
-    // use first city (boxplot makes sense per city)
-    const rows0 = state.datasets[firstCity] || [];
-    const rows = filterByDate(rows0, startISO, endISO);
-    plotBoxplotByMonth(rows, varName);
-  }
-  else if(state.activeTab==="scatter"){
+    plotBoxplotMonthly(varName);
+    setStatus(`Boxplot mensal • ${VAR_META[varName].label}`);
+  } else if(tab==="scatter"){
     tablePane.classList.add("hidden");
     plotDiv.classList.remove("hidden");
-    const xName = document.getElementById("selX").value;
-    const yName = document.getElementById("selY").value;
+    const xVar = document.getElementById("selX").value;
+    const yVar = document.getElementById("selY").value;
     const lag = parseInt(document.getElementById("selLag").value,10) || 0;
-
-    // scatter uses first city
-    const rows0 = state.datasets[firstCity] || [];
-    const rows = filterByDate(rows0, startISO, endISO);
-
-    // aggregate for scatter with same agg/reducer
-    const sx = aggregateSeries(rows, xName, agg, chooseReducer(reducerSel, xName));
-    const sy = aggregateSeries(rows, yName, agg, chooseReducer(reducerSel, yName));
-
-    // align by key
-    const mapY = new Map(sy.map(d=>[d.key, d.value]));
-    const x=[], y=[];
-    for(let i=0;i<sx.length;i++){
-      const key = sx[i].key;
-      const yv = mapY.get(key);
-      const xv = sx[i].value;
-      if(typeof xv!=="number" || typeof yv!=="number") continue;
-      x.push(xv); y.push(yv);
-    }
-
-    // apply lag to y (shift)
-    if(lag>0 && x.length>lag){
-      x.splice(0, lag);
-      y.splice(y.length-lag, lag);
-    }
-
-    const pr = pearson(x,y);
-    const sp = spearman(x,y);
-    const fit = olsSlope(x,y);
-
-    setStatus(`Scatter (${firstCity}) • Pearson r=${fmt(pr.r,3)} (R²=${fmt(pr.r*pr.r,3)}) • Spearman ρ=${fmt(sp.r,3)} • OLS slope p≈${fmt(fit.p,4)} • n=${x.length}`);
-
-    plotScatter(x,y,xName,yName,fit);
-  }
-  else if(state.activeTab==="table"){
+    plotScatter(scale, xVar, yVar, lag);
+  } else if(tab==="table"){
     plotDiv.classList.add("hidden");
     tablePane.classList.remove("hidden");
-    const firstCity = cities[0] || DEFAULT_CITY;
-    const series = seriesByCity.get(firstCity) || [];
-    renderTable(series);
-    setStatus(`Tabela (${firstCity}) • ${series.length} registros`);
+    renderTable(scale, varName);
   }
 }
 
-function recalcAll(){
-  updateVarDesc();
-  recalc();
-}
-
-/* ==========================================
-   Tabs
-========================================== */
 function setActiveTab(tab){
   state.activeTab = tab;
-  document.querySelectorAll(".tab").forEach(b=>{
-    b.classList.toggle("active", b.dataset.tab===tab);
-  });
-  // show/hide table pane handled in recalc
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
   recalc();
 }
 
-/* ==========================================
-   Export
-========================================== */
+/* =========================
+   Export + PNG
+========================= */
 function exportSelectionCSV(){
-  const cities = getSelectedCities();
+  const scale = getScale();
   const varName = document.getElementById("selVar").value;
-  const agg = document.getElementById("selAgg").value;
-  const reducerSel = document.getElementById("selReducer").value;
-  const reducer = chooseReducer(reducerSel, varName);
-  const startISO = document.getElementById("dateStart").value;
-  const endISO = document.getElementById("dateEnd").value;
+  const cities = getSelectedCities();
 
   const rowsOut = [];
   for(const c of cities){
-    const rows0 = state.datasets[c] || [];
-    const rows = filterByDate(rows0, startISO, endISO);
-    const s = aggregateSeries(rows, varName, agg, reducer);
-    for(const d of s){
-      rowsOut.push({city:c, date:toISODate(d.dt), value:d.value});
+    const rows = (state.datasets[c]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
+    for(const r of rows){
+      rowsOut.push({city:c, scale, period:r.period, [varName]: r[varName]});
     }
   }
 
@@ -1177,7 +927,7 @@ function exportSelectionCSV(){
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `PLAC_Caceres_${varName}_${agg}.csv`;
+  a.download = `PLAC_${scale}_${varName}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -1186,9 +936,9 @@ function savePNG(){
   Plotly.downloadImage("plot", {format:"png", filename:"PLAC_Caceres_grafico", scale:2});
 }
 
-/* ==========================================
-   City upload / remove
-========================================== */
+/* =========================
+   Upload city (same format)
+========================= */
 async function loadFileAsText(file){
   const name = file.name.toLowerCase();
   if(name.endsWith(".gz") || name.endsWith(".csv.gz")){
@@ -1201,15 +951,16 @@ async function loadFileAsText(file){
 
 async function addCityFromFile(file){
   const text = await loadFileAsText(file);
-  const cityName = prompt("Nome do município (como deseja que apareça no painel):", file.name.replace(/\.(csv|gz|csv\.gz)$/i,""));
+  const cityName = prompt("Nome do município (como deve aparecer no painel):", file.name.replace(/\.(csv|gz|csv\.gz)$/i,""));
   if(!cityName) return;
+
   setSpinner(true, `Carregando ${cityName}…`);
   await loadCityFromCSVText(cityName, text);
   buildCitySelect();
   buildVarSelects();
   setSpinner(false);
   setStatus(`Município adicionado: ${cityName}`);
-  recalcAll();
+  recalc();
 }
 
 function removeSelectedCities(){
@@ -1220,91 +971,75 @@ function removeSelectedCities(){
     delete state.datasets[c];
   }
   buildCitySelect();
-  buildVarSelects();
-  recalcAll();
+  recalc();
 }
 
-/* ==========================================
-   Init
-========================================== */
+/* =========================
+   INIT
+========================= */
 async function init(){
-  setSpinner(true, "Carregando Cáceres (CSV compactado)…");
+  try{
+    setSpinner(true, "Carregando Cáceres (mensal+anual)…");
 
-  // ✅ Carrega automaticamente o CSV.GZ do repo
-  const text = await loadGzText(DATA_URL);
+    const text = await loadGzText(DATA_URL);
+    await loadCityFromCSVText(DEFAULT_CITY, text);
 
-  // ✅ Injeta no estado (isso faz as variáveis aparecerem)
-  await loadCityFromCSVText(DEFAULT_CITY, text);
-
-  buildCitySelect();
-  buildVarSelects();
-  setDateLimits();
-
-  // defaults: pick a temperature-like variable if exists
-  const preferred = ["temperature_2m", "temperature_2m_max", "temperature_2m_min", "total_precipitation_sum", "dewpoint_temperature_2m"];
-  const selVar = document.getElementById("selVar");
-  for(const p of preferred){
-    if([...selVar.options].some(o=>o.value===p)){ selVar.value=p; break; }
-  }
-
-  setSpinner(false);
-
-  // listeners
-  document.getElementById("selCities").addEventListener("change", recalc);
-  document.getElementById("selVar").addEventListener("change", recalc);
-  document.getElementById("selAgg").addEventListener("change", recalc);
-  document.getElementById("selReducer").addEventListener("change", recalc);
-  document.getElementById("dateStart").addEventListener("change", recalc);
-  document.getElementById("dateEnd").addEventListener("change", recalc);
-  document.getElementById("chkHideSnow").addEventListener("change", ()=>{
+    buildCitySelect();
     buildVarSelects();
+
+    // defaults bons para comunicação pública
+    document.getElementById("selScale").value = "monthly";
+    document.getElementById("selVar").value = "temperature_2m";
+    document.getElementById("selX").value = "temperature_2m";
+    document.getElementById("selY").value = "total_precipitation_sum";
+
+    setSpinner(false);
+
+    // listeners
+    document.getElementById("selCities").addEventListener("change", recalc);
+    document.getElementById("selScale").addEventListener("change", recalc);
+    document.getElementById("selVar").addEventListener("change", recalc);
+    document.getElementById("selReducer").addEventListener("change", recalc);
+    document.getElementById("selLag").addEventListener("change", recalc);
+    document.getElementById("selX").addEventListener("change", recalc);
+    document.getElementById("selY").addEventListener("change", recalc);
+
+    document.querySelectorAll(".tab").forEach(b=>{
+      b.addEventListener("click", ()=>setActiveTab(b.dataset.tab));
+    });
+
+    document.getElementById("btnExportCSV").addEventListener("click", exportSelectionCSV);
+    document.getElementById("btnSavePNG").addEventListener("click", savePNG);
+
+    document.getElementById("btnReset").addEventListener("click", ()=>{
+      document.getElementById("selScale").value = "monthly";
+      document.getElementById("selReducer").value = "auto";
+      setActiveTab("ts");
+      setStatus("Reset aplicado.");
+      recalc();
+    });
+
+    document.getElementById("btnRemoveCity").addEventListener("click", removeSelectedCities);
+
+    document.getElementById("fileCity").addEventListener("change", async (e)=>{
+      const f = e.target.files?.[0];
+      if(!f) return;
+      try{ await addCityFromFile(f); }
+      catch(err){ console.error(err); alert("Falha ao adicionar município: " + err.message); }
+      finally{ e.target.value = ""; }
+    });
+
+    // first draw
     recalc();
-  });
-  document.getElementById("selX").addEventListener("change", recalc);
-  document.getElementById("selY").addEventListener("change", recalc);
-  document.getElementById("selLag").addEventListener("change", recalc);
+    setStatus("Dados carregados. Selecione variáveis e explore tendências/comparações.");
 
-  for(const b of document.querySelectorAll(".tab")){
-    b.addEventListener("click", ()=>setActiveTab(b.dataset.tab));
+  }catch(err){
+    console.error(err);
+    alert("Erro ao iniciar o painel: " + err.message);
   }
-
-  // actions
-  document.getElementById("btnExportCSV").addEventListener("click", exportSelectionCSV);
-  document.getElementById("btnSavePNG").addEventListener("click", savePNG);
-  document.getElementById("btnReset").addEventListener("click", ()=>{
-    // keep data, reset UI
-    document.getElementById("chkHideSnow").checked = true;
-    buildVarSelects();
-    setDateLimits();
-    setActiveTab("ts");
-    setStatus("Reset aplicado.");
-    recalcAll();
-  });
-
-  document.getElementById("btnRemoveCity").addEventListener("click", removeSelectedCities);
-
-  document.getElementById("fileCity").addEventListener("change", async (e)=>{
-    const f = e.target.files?.[0];
-    if(!f) return;
-    try{
-      await addCityFromFile(f);
-    }catch(err){
-      console.error(err);
-      alert("Falha ao adicionar município: " + err.message);
-    }finally{
-      e.target.value = "";
-    }
-  });
-
-  // first calc
-  setStatus("Dados carregados. Selecione variáveis e explore tendências/comparações.");
-  recalcAll();
 }
 
-init().catch(err=>{
-  console.error(err);
-  alert("Erro ao iniciar o painel: " + err.message);
-});
+init();
 </script>
 
 </body>
