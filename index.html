@@ -5,30 +5,33 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PLAC Cáceres — Painel Climático (Mensal/Anual)</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
-  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <!-- Menor e mais rápido que o Plotly completo -->
+  <script src="https://cdn.plot.ly/plotly-basic-2.30.0.min.js"></script>
+
+  <!-- CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- GZIP -->
+  <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
 
   <style>
     :root{
-      --bg:#f7fafc;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --line:#e2e8f0;
-      --shadow:0 14px 34px rgba(2,6,23,.10);
+      --bg:#070A12;
+      --card:#0B1220;
+      --card2:#0A0F1C;
+      --text:#EAF0FF;
+      --muted:#A7B0C3;
+      --line:rgba(255,255,255,.10);
+      --shadow:0 18px 42px rgba(0,0,0,.45);
       --r:18px;
 
-      --red:#ef4444;
-      --blue:#2563eb;
-      --green:#16a34a;
+      --blue:#22C1FF;
+      --green:#34D399;
+      --red:#FF3B3B;
+      --pink:#FF4EDB;
+      --yellow:#FFD166;
 
-      --chip:#f1f5f9;
-      --chipBorder:#e2e8f0;
-      --focus:rgba(37,99,235,.22);
-      --infoBg:rgba(37,99,235,.08);
-      --okBg:rgba(22,163,74,.10);
-      --warnBg:rgba(239,68,68,.10);
+      --focus:rgba(34,193,255,.22);
     }
 
     *{ box-sizing:border-box; }
@@ -36,81 +39,82 @@
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color:var(--text);
-      background: radial-gradient(1200px 800px at 10% 10%, rgba(37,99,235,.10), transparent 50%),
-                  radial-gradient(1200px 800px at 90% 10%, rgba(22,163,74,.08), transparent 50%),
-                  radial-gradient(1200px 800px at 90% 90%, rgba(239,68,68,.10), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1000px 700px at 10% 10%, rgba(34,193,255,.22), transparent 60%),
+        radial-gradient(1000px 700px at 85% 15%, rgba(52,211,153,.18), transparent 58%),
+        radial-gradient(1000px 700px at 85% 90%, rgba(255,59,59,.18), transparent 60%),
+        radial-gradient(1000px 700px at 20% 90%, rgba(255,78,219,.12), transparent 60%),
+        var(--bg);
       min-height:100vh;
     }
 
     header{
       position:sticky; top:0; z-index:20;
-      backdrop-filter:saturate(1.2) blur(10px);
-      background: rgba(255,255,255,.86);
+      background: rgba(7,10,18,.72);
+      backdrop-filter: blur(10px) saturate(1.2);
       border-bottom:1px solid var(--line);
     }
-    .wrap{ max-width:1200px; margin:0 auto; padding:14px 14px; }
+
+    .wrap{ max-width:1240px; margin:0 auto; padding:14px 14px; }
 
     .topbar{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
       flex-wrap:wrap;
     }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-      min-width:260px;
-    }
+
+    .brand{ display:flex; align-items:center; gap:12px; min-width:260px; }
     .logo{
-      width:38px; height:38px; border-radius:12px;
-      background: conic-gradient(from 210deg, var(--red), var(--green), var(--blue), var(--red));
-      box-shadow:0 10px 22px rgba(2,6,23,.18);
+      width:42px; height:42px; border-radius:14px;
+      background: conic-gradient(from 210deg, var(--red), var(--yellow), var(--green), var(--blue), var(--pink), var(--red));
+      box-shadow: 0 14px 30px rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.16);
     }
-    .brand h1{ font-size:15px; margin:0; line-height:1.05; }
-    .brand p{ margin:2px 0 0; font-size:12px; color:var(--muted); }
+    .brand h1{ font-size:15px; margin:0; line-height:1.05; letter-spacing:.2px; }
+    .brand p{ margin:3px 0 0; font-size:12px; color:var(--muted); }
 
     .actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 
     .btn{
-      border:1px solid var(--line);
-      background:var(--card);
-      padding:9px 12px;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:800;
-      font-size:12px;
-      box-shadow:0 8px 18px rgba(2,6,23,.06);
-      transition:.15s transform, .15s box-shadow, .15s border-color;
+      border:1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
       color:var(--text);
+      padding:10px 14px;
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+      box-shadow:0 14px 26px rgba(0,0,0,.35);
+      transition:.15s transform, .15s box-shadow, .15s border-color;
+      user-select:none;
     }
-    .btn:hover{ transform: translateY(-1px); box-shadow:0 10px 22px rgba(2,6,23,.10); border-color:#cbd5e1; }
-    .btn.primary{ border-color:rgba(37,99,235,.25); background: rgba(37,99,235,.08); }
-    .btn.ok{ border-color:rgba(22,163,74,.25); background: rgba(22,163,74,.08); }
-    .btn.danger{ border-color:rgba(239,68,68,.25); background: rgba(239,68,68,.08); }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.28); box-shadow:0 16px 32px rgba(0,0,0,.45); }
 
-    main .wrap{ padding-top:18px; padding-bottom:28px; }
+    .btn.blue{ background: linear-gradient(180deg, rgba(34,193,255,.35), rgba(34,193,255,.12)); }
+    .btn.green{ background: linear-gradient(180deg, rgba(52,211,153,.30), rgba(52,211,153,.10)); }
+    .btn.red{ background: linear-gradient(180deg, rgba(255,59,59,.30), rgba(255,59,59,.10)); }
+
+    main .wrap{ padding-top:16px; padding-bottom:26px; }
 
     .grid{
       display:grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 380px 1fr;
       gap:14px;
     }
-    @media (max-width: 980px){
-      .grid{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 1000px){ .grid{ grid-template-columns:1fr; } }
 
     .card{
-      background:var(--card);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border:1px solid var(--line);
       border-radius:var(--r);
       box-shadow:var(--shadow);
+      overflow:hidden;
     }
     .card h2{
       margin:0;
       font-size:13px;
       padding:12px 14px;
       border-bottom:1px solid var(--line);
-      background: linear-gradient(180deg, rgba(2,6,23,.02), transparent);
-      border-top-left-radius:var(--r);
-      border-top-right-radius:var(--r);
+      background: linear-gradient(180deg, rgba(0,0,0,.22), transparent);
     }
     .panel{ padding:12px 14px 14px; }
 
@@ -120,58 +124,67 @@
       color:var(--muted);
       margin:10px 0 6px;
     }
-    select, input[type="number"]{
+
+    select, input[type="date"]{
       width:100%;
       padding:10px 10px;
-      border-radius:12px;
-      border:1px solid var(--line);
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
       outline:none;
-      background:#fff;
+      background: rgba(9,12,20,.75);
+      color: var(--text);
       font-size:13px;
-      color:var(--text);
       transition:.15s box-shadow, .15s border-color;
     }
     select:focus, input:focus{
-      border-color: rgba(37,99,235,.35);
+      border-color: rgba(34,193,255,.35);
       box-shadow:0 0 0 6px var(--focus);
     }
 
-    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    @media(max-width:420px){ .row2{ grid-template-columns:1fr; } }
+    .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    @media(max-width:440px){ .row2{ grid-template-columns:1fr; } }
 
     .msg{
       margin-top:10px;
       padding:10px 12px;
       border-radius:14px;
-      border:1px solid var(--line);
-      background:#fff;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,10,16,.55);
       font-size:12px;
       color:var(--muted);
       line-height:1.35;
     }
-    .msg.info{ background:var(--infoBg); border-color: rgba(37,99,235,.18); }
-    .msg.ok{ background:var(--okBg); border-color: rgba(22,163,74,.18); }
+    .msg.good{ border-color: rgba(52,211,153,.25); background: rgba(52,211,153,.08); color:#D9FFE8; }
+    .msg.info{ border-color: rgba(34,193,255,.25); background: rgba(34,193,255,.08); color:#DFF6FF; }
+    .msg.bad{ border-color: rgba(255,59,59,.28); background: rgba(255,59,59,.08); color:#FFE0E0; }
 
+    .kpis{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(11,18,32,.55);
+    }
     .pill{
       display:inline-flex;
       align-items:center;
-      gap:6px;
+      gap:7px;
       padding:7px 10px;
       border-radius:999px;
-      border:1px solid var(--chipBorder);
-      background:var(--chip);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
       font-size:12px;
       font-weight:900;
       margin:6px 8px 0 0;
     }
-    .dot{ width:8px; height:8px; border-radius:50%; background: var(--blue); }
+    .dot{ width:9px; height:9px; border-radius:50%; }
 
     .tabs{ display:flex; gap:8px; flex-wrap:wrap; padding:12px 14px 0; }
     .tab{
-      border:1px solid var(--line);
-      background:#fff;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
       padding:8px 10px;
-      border-radius:12px;
+      border-radius:14px;
       cursor:pointer;
       font-size:12px;
       font-weight:900;
@@ -179,36 +192,37 @@
       transition:.15s;
     }
     .tab.active{
-      border-color:rgba(37,99,235,.30);
-      box-shadow:0 0 0 6px rgba(37,99,235,.10);
+      border-color: rgba(34,193,255,.35);
+      box-shadow:0 0 0 6px rgba(34,193,255,.12);
     }
 
     .viz{ padding:10px 14px 14px; }
-    .plot{ width:100%; height:540px; }
+    .plot{ width:100%; height:560px; }
 
     .hidden{ display:none !important; }
 
     .tableWrap{
       overflow:auto;
-      border:1px solid var(--line);
-      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      background: rgba(0,0,0,.20);
     }
     table{ border-collapse:collapse; width:100%; font-size:12px; }
-    th, td{ padding:10px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
-    th{ position:sticky; top:0; background:#f8fafc; text-align:left; font-weight:900; }
+    th, td{ padding:10px 10px; border-bottom:1px solid rgba(255,255,255,.10); white-space:nowrap; }
+    th{ position:sticky; top:0; background: rgba(0,0,0,.35); text-align:left; font-weight:900; }
 
-    .fileBtn{ position:relative; overflow:hidden; }
-    .fileBtn input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
-
-    .spinnerWrap{ display:flex; align-items:center; gap:10px; margin-top:10px; color:var(--muted); font-size:12px; }
+    .spinRow{
+      display:flex; align-items:center; gap:10px;
+      margin-top:10px; color:var(--muted); font-size:12px;
+    }
     .spinner{
       width:16px; height:16px;
       border-radius:50%;
-      border:2px solid #cbd5e1;
+      border:2px solid rgba(255,255,255,.22);
       border-top-color: var(--blue);
       animation: spin 1s linear infinite;
     }
-    @keyframes spin{ to{ transform:rotate(360deg); } }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
   </style>
 </head>
 
@@ -220,14 +234,14 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>PLAC Cáceres — Painel Climático (Mensal/Anual)</h1>
-          <p>Indicadores chave • leitura simples para leigos + precisão para técnicos</p>
+          <p>Dados + estatística + gráficos claros para decisão pública</p>
         </div>
       </div>
 
       <div class="actions">
-        <button class="btn primary" id="btnSavePNG">Salvar gráfico (PNG)</button>
-        <button class="btn ok" id="btnExportCSV">Exportar seleção (CSV)</button>
-        <button class="btn danger" id="btnReset">Reset</button>
+        <button class="btn blue" id="btnSavePNG">Salvar gráfico (PNG)</button>
+        <button class="btn green" id="btnExportCSV">Exportar seleção (CSV)</button>
+        <button class="btn red" id="btnReset">Reset</button>
       </div>
     </div>
   </div>
@@ -237,24 +251,14 @@
   <div class="wrap">
     <div class="grid">
 
-      <!-- CONTROLES -->
+      <!-- CONTROLES (SÓ CÁCERES) -->
       <div class="card">
-        <h2>Controles</h2>
+        <h2>Controles — Cáceres (MT)</h2>
         <div class="panel">
-          <label>Municípios (comparação até 5)</label>
-          <select id="selCities" size="5" multiple style="height:110px;"></select>
-
-          <div class="row2" style="margin-top:10px;">
-            <button class="btn fileBtn primary">
-              Adicionar cidade (CSV.GZ)
-              <input id="fileCity" type="file" accept=".csv,.gz,.csv.gz" />
-            </button>
-            <button class="btn danger" id="btnRemoveCity">Remover (exceto Cáceres)</button>
-          </div>
 
           <div class="msg info">
-            <b>Formato do arquivo para upload:</b> igual ao de Cáceres (mensal+anual, colunas iguais).
-            Assim o painel compara cidades para orientar políticas públicas.
+            <b>Objetivo:</b> permitir que qualquer pessoa (leiga ou técnica) veja tendência, sazonalidade,
+            comparações entre variáveis e exporte os resultados.
           </div>
 
           <label>Escala</label>
@@ -292,7 +296,7 @@
 
           <div id="varDesc" class="msg info">Carregando descrições…</div>
 
-          <div id="kpiBox" class="msg ok"></div>
+          <div class="kpis" id="kpiBox"></div>
 
           <hr style="border:none;border-top:1px solid var(--line);margin:14px 0;">
 
@@ -308,9 +312,9 @@
             </div>
           </div>
 
-          <div class="spinnerWrap" id="spinnerBox">
+          <div class="spinRow" id="spinnerBox">
             <div class="spinner"></div>
-            <div id="spinnerText">Carregando…</div>
+            <div id="spinnerText">Carregando dados…</div>
           </div>
 
           <div class="msg" id="statusBox">Pronto.</div>
@@ -343,67 +347,73 @@
 
 <script>
 /* =========================
-   CONFIG
+   CONFIG (ajuste só se mudar nome do arquivo)
 ========================= */
-const DEFAULT_CITY = "Cáceres";
 const DATA_URL = "data/caceres_keyvars_monthly_annual.csv.gz";
+// cache-busting (evita pegar versão antiga)
+const BUILD_TAG = "v5-" + new Date().toISOString().slice(0,10);
 
 /* =========================
-   VARS (dicionário didático)
+   Meses (nomes)
+========================= */
+const MONTHS_PT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+/* =========================
+   Dicionário de variáveis (didático)
 ========================= */
 const VAR_META = {
-  temperature_2m: {label:"Temperatura média do ar", unit:"°C", kind:"mean",
-    meaning:"Mostra o aquecimento médio. Útil para saúde, energia, agricultura e conforto térmico."},
+  temperature_2m: {label:"Temperatura média do ar (2m)", unit:"°C", kind:"mean",
+    meaning:"Aquecimento médio. Relevante para saúde, energia, agricultura e conforto térmico."},
   temperature_2m_max: {label:"Temperatura máxima (extremos)", unit:"°C", kind:"max",
-    meaning:"Indicador direto de ondas de calor e estresse térmico."},
+    meaning:"Ondas de calor e estresse térmico. Útil para alertas e planejamento urbano."},
   temperature_2m_min: {label:"Temperatura mínima (noites)", unit:"°C", kind:"min",
-    meaning:"Noites quentes/frias mudam consumo de energia, saúde e dinâmica ecológica."},
-  dewpoint_temperature_2m: {label:"Ponto de orvalho", unit:"°C", kind:"mean",
-    meaning:"Resume quanta umidade existe no ar. Ajuda a explicar sensação térmica e risco de secura."},
+    meaning:"Noites mais quentes afetam sono/saúde e consumo de energia."},
+  dewpoint_temperature_2m: {label:"Ponto de orvalho (2m)", unit:"°C", kind:"mean",
+    meaning:"Resumo da umidade no ar. Ajuda a entender sensação térmica e secura."},
   relative_humidity_2m: {label:"Umidade relativa (derivada)", unit:"%", kind:"mean",
     meaning:"Ar mais seco piora conforto térmico, aumenta risco de fogo e afeta saúde respiratória."},
-  vpd_kpa: {label:"Déficit de pressão de vapor (VPD)", unit:"kPa", kind:"mean",
-    meaning:"Mede o quanto o ar 'puxa' água das plantas e do solo. Alto VPD = maior estresse hídrico."},
+  vpd_kpa: {label:"VPD — déficit de pressão de vapor", unit:"kPa", kind:"mean",
+    meaning:"Quanto o ar puxa água do solo/plantas. Alto VPD = maior estresse hídrico."},
 
   total_precipitation_sum: {label:"Precipitação acumulada", unit:"mm", kind:"sum",
-    meaning:"Base para entender seca/cheia, recarga, abastecimento e risco de incêndios."},
+    meaning:"Base para seca/cheia, recarga hídrica, abastecimento e risco de incêndios."},
   runoff_sum: {label:"Escoamento (runoff)", unit:"mm", kind:"sum",
-    meaning:"Mostra água que escoa (potencial de enxurradas/erosão) e resposta hidrológica."},
+    meaning:"Resposta hidrológica. Útil para enxurradas, erosão e drenagem urbana."},
 
   potential_evaporation_sum: {label:"Evaporação potencial", unit:"mm", kind:"sum",
-    meaning:"Demanda atmosférica por água. Quando sobe, a seca tende a piorar mesmo com chuva igual."},
+    meaning:"Demanda atmosférica por água. Se sobe, a seca pode piorar mesmo sem queda de chuva."},
   evaporation_from_bare_soil_sum: {label:"Evaporação do solo exposto", unit:"mm", kind:"sum",
-    meaning:"Perda de água direto do solo. Importante para manejo do solo e conservação."},
+    meaning:"Perda direta do solo. Importante para conservação do solo e manejo agrícola."},
   evaporation_from_the_top_of_canopy_sum: {label:"Evaporação do dossel", unit:"mm", kind:"sum",
-    meaning:"Água que evapora da copa após chuva. Ajuda a entender interceptação e microclima."},
+    meaning:"Água que evapora da copa após chuva (interceptação). Afeta microclima."},
   evaporation_from_vegetation_transpiration_sum: {label:"Transpiração da vegetação", unit:"mm", kind:"sum",
-    meaning:"Água usada pelas plantas. Indica funcionamento ecológico e conforto térmico por vegetação."},
+    meaning:"Água usada pela vegetação. Indica funcionamento ecológico e resfriamento por verde."},
 
-  volumetric_soil_water_layer_1: {label:"Umidade do solo (camada superficial)", unit:"m³/m³", kind:"mean",
-    meaning:"Mostra quanta água existe no solo próximo à superfície — chave para agricultura e fogo."},
+  volumetric_soil_water_layer_1: {label:"Umidade do solo (superficial)", unit:"m³/m³", kind:"mean",
+    meaning:"Água disponível no solo. Chave para agricultura, incêndios e estresse ambiental."},
   soil_temperature_level_1: {label:"Temperatura do solo (superficial)", unit:"°C", kind:"mean",
-    meaning:"Afeta germinação, microbiologia do solo, emissões e estresse em vegetação."},
+    meaning:"Afeta germinação, microbiologia do solo e estresse térmico em plantas."},
 
   surface_solar_radiation_downwards_sum: {label:"Radiação solar incidente", unit:"MJ/m²", kind:"sum",
-    meaning:"Energia que chega do sol. Influencia evapotranspiração, calor e produtividade."},
+    meaning:"Energia que chega do sol. Influencia calor, evapotranspiração e produtividade."},
   surface_net_solar_radiation_sum: {label:"Radiação solar líquida", unit:"MJ/m²", kind:"sum",
-    meaning:"Energia efetiva disponível na superfície para aquecer e evaporar água."},
+    meaning:"Energia efetiva para aquecer e evaporar água na superfície."},
 
-  wind_speed_10m: {label:"Velocidade do vento (10m)", unit:"m/s", kind:"mean",
-    meaning:"Vento espalha fumaça, influencia fogo e resfriamento/aquecimento local."}
+  wind_speed_10m: {label:"Vento (10m)", unit:"m/s", kind:"mean",
+    meaning:"Importante para fogo, dispersão de fumaça e conforto térmico."}
 };
 
 /* =========================
    STATE
 ========================= */
 const state = {
-  datasets: {}, // city -> rows (já mensal/anual)
+  rows: [],
   vars: [],
-  activeTab: "ts",
+  activeTab: "ts"
 };
 
 /* =========================
-   UI helpers
+   UI
 ========================= */
 function setSpinner(on, text){
   const box = document.getElementById("spinnerBox");
@@ -413,124 +423,27 @@ function setSpinner(on, text){
     if(text) t.textContent = text;
   } else box.classList.add("hidden");
 }
-function setStatus(msg){ document.getElementById("statusBox").textContent = msg; }
+function setStatus(msg, kind=""){
+  const el = document.getElementById("statusBox");
+  el.className = "msg " + (kind||"");
+  el.textContent = msg;
+}
 function fmt(n, d=2){ if(n==null || Number.isNaN(n)) return "—"; return Number(n).toFixed(d); }
-function dot(color){ return `<span class="dot" style="background:${color}"></span>`; }
 function isNum(x){ return typeof x==="number" && !Number.isNaN(x); }
 
 /* =========================
-   Load .gz text
+   GZ loader
 ========================= */
 async function loadGzText(url){
-  const resp = await fetch(url, {cache:"no-cache"});
+  const resp = await fetch(url + "?build=" + encodeURIComponent(BUILD_TAG), {cache:"no-store"});
   if(!resp.ok) throw new Error(`Não consegui carregar: ${url} (${resp.status})`);
   const buffer = await resp.arrayBuffer();
   const decompressed = window.pako.ungzip(new Uint8Array(buffer));
   return new TextDecoder("utf-8").decode(decompressed);
 }
 
-async function loadCityFromCSVText(cityName, csvText){
-  const parsed = Papa.parse(csvText, {header:true, dynamicTyping:true, skipEmptyLines:true});
-  const rows = parsed.data || [];
-  if(!rows.length) throw new Error("CSV sem linhas válidas.");
-
-  // normaliza tipos
-  for(const r of rows){
-    r.period = String(r.period);
-    r.scale = String(r.scale);
-    // cria dt para plot
-    if(r.scale==="monthly"){
-      // period: YYYY-MM
-      r.__dt = new Date(r.period + "-01T00:00:00");
-      const m = Number(r.period.slice(5,7));
-      r.__month = m;
-      r.__year = Number(r.period.slice(0,4));
-    } else {
-      // annual: YYYY
-      r.__dt = new Date(r.period + "-01-01T00:00:00");
-      r.__month = null;
-      r.__year = Number(r.period);
-    }
-  }
-
-  state.datasets[cityName] = rows;
-
-  // vars = interseção com VAR_META (só o que a gente quer mostrar)
-  const cols = Object.keys(rows[0]);
-  const wanted = Object.keys(VAR_META).filter(v => cols.includes(v));
-  state.vars = wanted;
-}
-
 /* =========================
-   Build selects
-========================= */
-function buildCitySelect(){
-  const sel = document.getElementById("selCities");
-  sel.innerHTML = "";
-  for(const c of Object.keys(state.datasets)){
-    const opt = document.createElement("option");
-    opt.value = c; opt.textContent = c;
-    if(c===DEFAULT_CITY) opt.selected = true;
-    sel.appendChild(opt);
-  }
-}
-
-function buildVarSelects(){
-  const vars = state.vars.slice();
-  const selVar = document.getElementById("selVar");
-  const selX = document.getElementById("selX");
-  const selY = document.getElementById("selY");
-
-  const prevV = selVar.value, prevX = selX.value, prevY = selY.value;
-
-  function fill(sel){
-    sel.innerHTML = "";
-    for(const v of vars){
-      const m = VAR_META[v];
-      const opt = document.createElement("option");
-      opt.value = v;
-      opt.textContent = `${m.label} (${m.unit})`;
-      sel.appendChild(opt);
-    }
-  }
-
-  fill(selVar); fill(selX); fill(selY);
-
-  if(vars.includes(prevV)) selVar.value = prevV;
-  if(vars.includes(prevX)) selX.value = prevX;
-  if(vars.includes(prevY)) selY.value = prevY;
-
-  if(!selVar.value && vars.length) selVar.value = vars[0];
-  if(!selX.value && vars.length) selX.value = vars[0];
-  if(!selY.value && vars.length) selY.value = vars[Math.min(1, vars.length-1)];
-
-  updateVarDesc();
-}
-
-function updateVarDesc(){
-  const v = document.getElementById("selVar").value;
-  const box = document.getElementById("varDesc");
-  const meta = VAR_META[v];
-  box.innerHTML = `<b>${meta.label}</b> • unidade: <b>${meta.unit}</b><br>${meta.meaning}`;
-}
-
-/* =========================
-   Select helpers
-========================= */
-function getSelectedCities(){
-  const sel = document.getElementById("selCities");
-  const arr = [...sel.selectedOptions].map(o=>o.value);
-  return (arr.length ? arr : [DEFAULT_CITY]).slice(0,5);
-}
-function getScale(){ return document.getElementById("selScale").value; }
-function chooseReducer(varName){
-  const sel = document.getElementById("selReducer").value;
-  if(sel!=="auto") return sel;
-  return VAR_META[varName].kind; // kind = mean/sum/min/max
-}
-
-/* =========================
-   Stats: Pearson, Spearman, OLS, MK, Sen (seguro agora)
+   Stats helpers
 ========================= */
 function erf(x){
   const sign = x>=0 ? 1:-1;
@@ -543,16 +456,15 @@ function erf(x){
 function normalCdf(z){ return 0.5*(1+erf(z/Math.SQRT2)); }
 
 function pearson(x,y){
-  const n = x.length;
+  const n=x.length;
   if(n<3) return {r:NaN};
-  const mx = x.reduce((a,b)=>a+b,0)/n;
-  const my = y.reduce((a,b)=>a+b,0)/n;
+  const mx=x.reduce((a,b)=>a+b,0)/n, my=y.reduce((a,b)=>a+b,0)/n;
   let num=0, dx=0, dy=0;
   for(let i=0;i<n;i++){
     const a=x[i]-mx, b=y[i]-my;
-    num += a*b; dx += a*a; dy += b*b;
+    num+=a*b; dx+=a*a; dy+=b*b;
   }
-  const den = Math.sqrt(dx*dy);
+  const den=Math.sqrt(dx*dy);
   return {r: den===0 ? NaN : num/den};
 }
 function rank(arr){
@@ -569,14 +481,12 @@ function rank(arr){
   return ranks;
 }
 function spearman(x,y){
-  const rx = rank(x), ry = rank(y);
+  const rx=rank(x), ry=rank(y);
   return pearson(rx,ry);
 }
-
 function olsSlope(x,y){
   const n=x.length;
-  const mx = x.reduce((a,b)=>a+b,0)/n;
-  const my = y.reduce((a,b)=>a+b,0)/n;
+  const mx=x.reduce((a,b)=>a+b,0)/n, my=y.reduce((a,b)=>a+b,0)/n;
   let sxx=0, sxy=0;
   for(let i=0;i<n;i++){
     const dx=x[i]-mx;
@@ -586,10 +496,9 @@ function olsSlope(x,y){
   const slope = sxx===0 ? NaN : sxy/sxx;
   const intercept = my - slope*mx;
 
-  // p-value normal approx
   let sse=0;
   for(let i=0;i<n;i++){
-    const yhat = intercept + slope*x[i];
+    const yhat=intercept+slope*x[i];
     sse += (y[i]-yhat)**2;
   }
   const se2 = sse/(n-2);
@@ -598,7 +507,6 @@ function olsSlope(x,y){
   const p = 2*(1 - normalCdf(Math.abs(t)));
   return {slope, intercept, p};
 }
-
 function mannKendall(values){
   const x = values.filter(v=>isNum(v));
   const n = x.length;
@@ -610,299 +518,283 @@ function mannKendall(values){
       else if(x[j]<x[i]) S--;
     }
   }
-  const counts = {};
+  const counts={};
   for(const v of x){
-    const key = String(v);
-    counts[key] = (counts[key]||0)+1;
+    const k=String(v);
+    counts[k]=(counts[k]||0)+1;
   }
-  let tieSum = 0;
+  let tieSum=0;
   for(const k in counts){
-    const t = counts[k];
+    const t=counts[k];
     if(t>1) tieSum += t*(t-1)*(2*t+5);
   }
-  const varS = (n*(n-1)*(2*n+5) - tieSum)/18;
+  const varS=(n*(n-1)*(2*n+5)-tieSum)/18;
   const z = S>0 ? (S-1)/Math.sqrt(varS) : S<0 ? (S+1)/Math.sqrt(varS) : 0;
   const p = 2*(1 - normalCdf(Math.abs(z)));
-  const tau = S / (0.5*n*(n-1));
+  const tau = S/(0.5*n*(n-1));
   const trend = p<0.05 ? (S>0 ? "aumentando" : "diminuindo") : "sem tendência significativa";
   return {tau, z, p, trend};
 }
-
 function senSlope(xTime, y){
-  // Theil-Sen: mediana das inclinações
-  const n = y.length;
-  const slopes = [];
+  const n=y.length;
+  const slopes=[];
   for(let i=0;i<n-1;i++){
     for(let j=i+1;j<n;j++){
-      const dt = xTime[j]-xTime[i];
+      const dt=xTime[j]-xTime[i];
       if(dt!==0) slopes.push((y[j]-y[i])/dt);
     }
   }
   slopes.sort((a,b)=>a-b);
-  const mid = Math.floor(slopes.length/2);
-  return slopes.length ? (slopes.length%2 ? slopes[mid] : (slopes[mid-1]+slopes[mid])/2) : NaN;
+  if(!slopes.length) return NaN;
+  const mid=Math.floor(slopes.length/2);
+  return slopes.length%2 ? slopes[mid] : (slopes[mid-1]+slopes[mid])/2;
 }
 
 /* =========================
-   Data extraction
+   Build selects
 ========================= */
-function seriesFor(city, scale, varName, reducer){
-  const rows = (state.datasets[city]||[]).filter(r=>r.scale===scale);
-  const vals = rows.map(r=>r[varName]).filter(v=>isNum(v));
-  const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : NaN;
-  const mn = vals.length ? Math.min(...vals) : NaN;
-  const mx = vals.length ? Math.max(...vals) : NaN;
-  return {rows, vals, mean, mn, mx};
+function buildVarSelects(){
+  const selVar=document.getElementById("selVar");
+  const selX=document.getElementById("selX");
+  const selY=document.getElementById("selY");
+
+  const vars = state.vars.slice();
+  function fill(sel){
+    sel.innerHTML="";
+    for(const v of vars){
+      const m=VAR_META[v];
+      const opt=document.createElement("option");
+      opt.value=v;
+      opt.textContent=`${m.label} (${m.unit})`;
+      sel.appendChild(opt);
+    }
+  }
+  fill(selVar); fill(selX); fill(selY);
+
+  selVar.value = vars.includes("temperature_2m") ? "temperature_2m" : vars[0];
+  selX.value = vars.includes("temperature_2m") ? "temperature_2m" : vars[0];
+  selY.value = vars.includes("total_precipitation_sum") ? "total_precipitation_sum" : vars[Math.min(1,vars.length-1)];
+
+  updateVarDesc();
+}
+
+function updateVarDesc(){
+  const v=document.getElementById("selVar").value;
+  const meta=VAR_META[v];
+  const box=document.getElementById("varDesc");
+  box.innerHTML = `<b>${meta.label}</b> • unidade: <b>${meta.unit}</b><br>${meta.meaning}`;
 }
 
 /* =========================
-   Plots
+   Data helpers
 ========================= */
-function plotTimeSeries(scale, varName, reducer){
-  const cities = getSelectedCities();
-  const meta = VAR_META[varName];
-
-  const colors = ["#2563eb","#16a34a","#ef4444","#0ea5e9","#22c55e"];
-  const traces = [];
-  let idx=0;
-
-  for(const c of cities){
-    const rows = (state.datasets[c]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
-
-    // reducer em cima da própria coluna (já agregada). Em geral: usa direto.
-    const y = rows.map(r=>r[varName]).map(v=>isNum(v)?v:null);
-    const x = rows.map(r=>r.__dt);
-
-    traces.push({
-      x, y,
-      type:"scatter",
-      mode:"lines",
-      name:c,
-      line:{width:2.8, color:colors[idx%colors.length]}
-    });
-    idx++;
-  }
-
-  const title = `${meta.label} (${meta.unit}) — ${scale==="monthly" ? "mensal" : "anual"}`;
-
-  Plotly.newPlot("plot", traces, {
-    margin:{l:60,r:20,t:45,b:50},
-    paper_bgcolor:"rgba(0,0,0,0)",
-    plot_bgcolor:"#ffffff",
-    title:{text:title, font:{size:14}},
-    xaxis:{title:"Tempo", showgrid:true, gridcolor:"#eef2f7"},
-    yaxis:{title:`${meta.label} (${meta.unit})`, showgrid:true, gridcolor:"#eef2f7"},
-    legend:{orientation:"h", y:-0.18},
-  }, {responsive:true, displaylogo:false});
+function getScale(){ return document.getElementById("selScale").value; }
+function chooseReducer(varName){
+  const sel=document.getElementById("selReducer").value;
+  if(sel!=="auto") return sel;
+  return VAR_META[varName].kind;
 }
-
-function plotBoxplotMonthly(varName){
-  // só faz sentido em monthly
-  const cities = getSelectedCities();
-  const meta = VAR_META[varName];
-
-  const traces = [];
-  for(const c of cities){
-    const rows = (state.datasets[c]||[]).filter(r=>r.scale==="monthly");
-    const buckets = new Map();
-    for(let m=1;m<=12;m++) buckets.set(m, []);
-    for(const r of rows){
-      const v = r[varName];
-      if(isNum(v)) buckets.get(r.__month).push(v);
-    }
-    for(let m=1;m<=12;m++){
-      traces.push({
-        y: buckets.get(m),
-        type:"box",
-        name: `${c} — ${String(m).padStart(2,"0")}`,
-        boxpoints:false
-      });
-    }
-  }
-
-  Plotly.newPlot("plot", traces, {
-    margin:{l:60,r:20,t:45,b:50},
-    paper_bgcolor:"rgba(0,0,0,0)",
-    plot_bgcolor:"#ffffff",
-    title:{text:`Boxplot por mês — ${meta.label} (${meta.unit})`, font:{size:14}},
-    xaxis:{title:"Cidade — Mês", showgrid:false},
-    yaxis:{title:`${meta.label} (${meta.unit})`, showgrid:true, gridcolor:"#eef2f7"},
-  }, {responsive:true, displaylogo:false});
-}
-
-function plotScatter(scale, xVar, yVar, lag){
-  const c = getSelectedCities()[0] || DEFAULT_CITY;
-  const rows = (state.datasets[c]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
-
-  const xs = rows.map(r=>r[xVar]);
-  const ys = rows.map(r=>r[yVar]);
-  const ts = rows.map(r=>r.__dt.getTime()/86400000);
-
-  // apply lag on Y (shift forward in time)
-  let x=[], y=[], t=[];
-  for(let i=0;i<rows.length;i++){
-    const j = i + lag;
-    if(j>=rows.length) break;
-    const xv = xs[i], yv = ys[j];
-    if(isNum(xv) && isNum(yv)){
-      x.push(xv); y.push(yv); t.push(ts[i]);
-    }
-  }
-
-  const pr = pearson(x,y);
-  const sp = spearman(x,y);
-  const fit = olsSlope(x,y);
-  const r2 = pr.r*pr.r;
-
-  const metaX = VAR_META[xVar], metaY = VAR_META[yVar];
-
-  // regression line
-  const minX = Math.min(...x), maxX = Math.max(...x);
-  const lineX = [minX, maxX];
-  const lineY = lineX.map(v => fit.intercept + fit.slope*v);
-
-  const traces = [
-    {x, y, type:"scatter", mode:"markers", name:"Dados",
-     marker:{size:7, opacity:0.8, color:"#2563eb"}},
-    {x:lineX, y:lineY, type:"scatter", mode:"lines", name:"Regressão (OLS)",
-     line:{width:3, color:"#ef4444"}}
-  ];
-
-  setStatus(`Dispersão (${c}, ${scale}) • Pearson r=${fmt(pr.r,3)} (R²=${fmt(r2,3)}) • Spearman ρ=${fmt(sp.r,3)} • p≈${fmt(fit.p,4)} • n=${x.length}`);
-
-  Plotly.newPlot("plot", traces, {
-    margin:{l:60,r:20,t:45,b:50},
-    paper_bgcolor:"rgba(0,0,0,0)",
-    plot_bgcolor:"#ffffff",
-    title:{text:`Dispersão: ${metaX.label} × ${metaY.label} (lag Y = ${lag})`, font:{size:14}},
-    xaxis:{title:`${metaX.label} (${metaX.unit})`, showgrid:true, gridcolor:"#eef2f7"},
-    yaxis:{title:`${metaY.label} (${metaY.unit})`, showgrid:true, gridcolor:"#eef2f7"},
-    legend:{orientation:"h", y:-0.18},
-  }, {responsive:true, displaylogo:false});
-}
-
-function renderTable(scale, varName){
-  const c = getSelectedCities()[0] || DEFAULT_CITY;
-  const rows = (state.datasets[c]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
-
-  const tbl = document.getElementById("tbl");
-  tbl.innerHTML = "";
-  tbl.innerHTML = `<thead><tr><th>Cidade</th><th>Escala</th><th>Período</th><th>${VAR_META[varName].label} (${VAR_META[varName].unit})</th></tr></thead>`;
-  const tbody = document.createElement("tbody");
-  for(const r of rows){
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${c}</td><td>${scale}</td><td>${r.period}</td><td>${fmt(r[varName],3)}</td>`;
-    tbody.appendChild(tr);
-  }
-  tbl.appendChild(tbody);
-  setStatus(`Tabela (${c}) • ${rows.length} linhas`);
+function filterRows(scale){
+  return state.rows.filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
 }
 
 /* =========================
    KPI + Tendência
 ========================= */
 function updateKPI(scale, varName){
-  const cities = getSelectedCities();
+  const rows = filterRows(scale);
   const meta = VAR_META[varName];
-  const reducer = chooseReducer(varName);
 
-  const firstCity = cities[0] || DEFAULT_CITY;
-  const rows = (state.datasets[firstCity]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
-
-  const y = rows.map(r=>r[varName]).filter(v=>isNum(v));
-  const mean = y.length ? y.reduce((a,b)=>a+b,0)/y.length : NaN;
-  const mn = y.length ? Math.min(...y) : NaN;
-  const mx = y.length ? Math.max(...y) : NaN;
-
-  // Trend time axis: years for annual, months for monthly (in years)
-  const tYears = rows.map(r=>{
-    if(scale==="annual") return Number(r.period);
-    // monthly: year + (month-0.5)/12
-    const yr = Number(r.period.slice(0,4));
-    const mo = Number(r.period.slice(5,7));
-    return yr + (mo-0.5)/12;
-  });
-  const yAll = rows.map(r=>r[varName]).filter(v=>isNum(v));
-
-  // align arrays
-  const t = [];
   const yy = [];
-  for(let i=0;i<rows.length;i++){
-    const v = rows[i][varName];
+  const t = [];
+  for(const r of rows){
+    const v=r[varName];
     if(isNum(v)){
-      t.push(tYears[i]);
       yy.push(v);
+      if(scale==="annual"){
+        t.push(Number(r.period));
+      }else{
+        const yr=Number(r.period.slice(0,4));
+        const mo=Number(r.period.slice(5,7));
+        t.push(yr + (mo-0.5)/12);
+      }
     }
   }
 
-  let mk = mannKendall(yy);
-  let sen = NaN;
-  if(yy.length >= 10 && yy.length <= 1200){
-    sen = senSlope(t, yy); // unidade por ano (porque t está em ano)
-  }
+  const mean = yy.length ? yy.reduce((a,b)=>a+b,0)/yy.length : NaN;
+  const mn = yy.length ? Math.min(...yy) : NaN;
+  const mx = yy.length ? Math.max(...yy) : NaN;
 
-  const fit = olsSlope(t, yy); // slope por ano
-  const trendTxt =
-    (mk && isNum(mk.p))
-      ? `MK: ${mk.trend} (p=${fmt(mk.p,4)}, τ=${fmt(mk.tau,3)})`
-      : `MK: insuficiente`;
+  const mk = mannKendall(yy);
+  const sen = (yy.length>=10) ? senSlope(t,yy) : NaN;
+  const ols = (yy.length>=10) ? olsSlope(t,yy) : {slope:NaN,p:NaN};
 
-  const senTxt = isNum(sen) ? `• Sen ≈ ${fmt(sen,3)} ${meta.unit}/ano` : `• Sen: —`;
-  const olsTxt = isNum(fit.slope) ? `• OLS ≈ ${fmt(fit.slope,3)} ${meta.unit}/ano (p≈${fmt(fit.p,4)})` : ``;
-
-  document.getElementById("kpiBox").innerHTML =
-    `<span class="pill">${dot("var(--blue)")}<b>Média</b> ${fmt(mean,2)} ${meta.unit}</span>` +
-    `<span class="pill">${dot("var(--green)")}<b>Mín</b> ${fmt(mn,2)} ${meta.unit}</span>` +
-    `<span class="pill">${dot("var(--red)")}<b>Máx</b> ${fmt(mx,2)} ${meta.unit}</span><br>` +
-    `<b>Tendência (${scale==="monthly" ? "mensal" : "anual"})</b>: ${trendTxt} ${senTxt} ${olsTxt}`;
+  const kpi=document.getElementById("kpiBox");
+  kpi.innerHTML = `
+    <div class="pill"><span class="dot" style="background:var(--blue)"></span>Média <b>${fmt(mean,2)} ${meta.unit}</b></div>
+    <div class="pill"><span class="dot" style="background:var(--green)"></span>Mín <b>${fmt(mn,2)} ${meta.unit}</b></div>
+    <div class="pill"><span class="dot" style="background:var(--red)"></span>Máx <b>${fmt(mx,2)} ${meta.unit}</b></div>
+    <div class="msg good" style="margin-top:10px;">
+      <b>Tendência</b> (${scale==="monthly" ? "mensal" : "anual"}): <b>${mk.trend}</b>
+      • p=${fmt(mk.p,4)} • τ=${fmt(mk.tau,3)}
+      <br>
+      <b>Sen</b> ≈ ${isNum(sen)? fmt(sen,3) : "—"} ${meta.unit}/ano
+      • <b>OLS</b> ≈ ${isNum(ols.slope)? fmt(ols.slope,3) : "—"} ${meta.unit}/ano (p≈${fmt(ols.p,4)})
+    </div>
+  `;
 }
 
 /* =========================
-   Main recalc
+   Plots
+========================= */
+function plotTimeSeries(scale, varName){
+  const rows = filterRows(scale);
+  const y = rows.map(r=>isNum(r[varName])?r[varName]:null);
+  const x = rows.map(r=>r.__dt);
+
+  Plotly.newPlot("plot", [{
+    x, y, type:"scatter", mode:"lines",
+    name:"Cáceres",
+    line:{width:3, color:"#22C1FF"}
+  }], {
+    margin:{l:62,r:16,t:46,b:54},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(8,10,16,.55)",
+    title:{text:`${VAR_META[varName].label} (${VAR_META[varName].unit}) — ${scale==="monthly"?"mensal":"anual"}`, font:{size:14,color:"#EAF0FF"}},
+    xaxis:{title:"Tempo", gridcolor:"rgba(255,255,255,.08)", zeroline:false, color:"#D7DEEE"},
+    yaxis:{title:`${VAR_META[varName].label} (${VAR_META[varName].unit})`, gridcolor:"rgba(255,255,255,.08)", zeroline:false, color:"#D7DEEE"},
+    legend:{orientation:"h", y:-0.18, font:{color:"#D7DEEE"}}
+  }, {responsive:true, displaylogo:false});
+}
+
+function plotBoxplotMonthly(varName){
+  // Um traço único com x = nome do mês (fica perfeito para leigo)
+  const rows = filterRows("monthly");
+  const x=[], y=[];
+  for(const r of rows){
+    const v=r[varName];
+    if(isNum(v)){
+      const m = Number(r.period.slice(5,7));
+      x.push(MONTHS_PT[m-1]);
+      y.push(v);
+    }
+  }
+
+  Plotly.newPlot("plot", [{
+    x, y,
+    type:"box",
+    boxpoints:false,
+    name:"Cáceres",
+    marker:{color:"#34D399"},
+    line:{color:"#34D399"}
+  }], {
+    margin:{l:62,r:16,t:46,b:54},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(8,10,16,.55)",
+    title:{text:`Boxplot mensal — ${VAR_META[varName].label} (${VAR_META[varName].unit})`, font:{size:14,color:"#EAF0FF"}},
+    xaxis:{title:"Mês", gridcolor:"rgba(255,255,255,.06)", color:"#D7DEEE"},
+    yaxis:{title:`${VAR_META[varName].label} (${VAR_META[varName].unit})`, gridcolor:"rgba(255,255,255,.08)", color:"#D7DEEE"},
+  }, {responsive:true, displaylogo:false});
+}
+
+function plotScatter(scale, xVar, yVar, lag){
+  const rows = filterRows(scale);
+
+  const xs = rows.map(r=>r[xVar]);
+  const ys = rows.map(r=>r[yVar]);
+
+  let x=[], y=[];
+  for(let i=0;i<rows.length;i++){
+    const j=i+lag;
+    if(j>=rows.length) break;
+    const xv=xs[i], yv=ys[j];
+    if(isNum(xv) && isNum(yv)){ x.push(xv); y.push(yv); }
+  }
+
+  const pr=pearson(x,y);
+  const sp=spearman(x,y);
+  const fit=olsSlope(x,y);
+  const r2 = pr.r*pr.r;
+
+  const minX=Math.min(...x), maxX=Math.max(...x);
+  const lineX=[minX,maxX];
+  const lineY=lineX.map(v=>fit.intercept + fit.slope*v);
+
+  setStatus(`Dispersão • Pearson r=${fmt(pr.r,3)} (R²=${fmt(r2,3)}) • Spearman ρ=${fmt(sp.r,3)} • p≈${fmt(fit.p,4)} • n=${x.length}`, "info");
+
+  Plotly.newPlot("plot", [
+    {x,y,type:"scatter",mode:"markers",name:"Dados", marker:{size:8, opacity:0.85, color:"#22C1FF"}},
+    {x:lineX,y:lineY,type:"scatter",mode:"lines",name:"Regressão (OLS)", line:{width:3, color:"#FF3B3B"}}
+  ], {
+    margin:{l:62,r:16,t:46,b:54},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(8,10,16,.55)",
+    title:{text:`${VAR_META[xVar].label} × ${VAR_META[yVar].label} (lag Y=${lag})`, font:{size:14,color:"#EAF0FF"}},
+    xaxis:{title:`${VAR_META[xVar].label} (${VAR_META[xVar].unit})`, gridcolor:"rgba(255,255,255,.08)", color:"#D7DEEE"},
+    yaxis:{title:`${VAR_META[yVar].label} (${VAR_META[yVar].unit})`, gridcolor:"rgba(255,255,255,.08)", color:"#D7DEEE"},
+    legend:{orientation:"h", y:-0.18, font:{color:"#D7DEEE"}}
+  }, {responsive:true, displaylogo:false});
+}
+
+function renderTable(scale, varName){
+  const rows = filterRows(scale);
+  const tbl=document.getElementById("tbl");
+  tbl.innerHTML="";
+  tbl.innerHTML = `<thead><tr>
+    <th>Escala</th><th>Período</th><th>${VAR_META[varName].label} (${VAR_META[varName].unit})</th>
+  </tr></thead>`;
+  const tb=document.createElement("tbody");
+  for(const r of rows){
+    const tr=document.createElement("tr");
+    tr.innerHTML = `<td>${scale}</td><td>${r.period}</td><td>${fmt(r[varName],3)}</td>`;
+    tb.appendChild(tr);
+  }
+  tbl.appendChild(tb);
+  setStatus(`Tabela • ${rows.length} linhas`, "info");
+}
+
+/* =========================
+   Recalc
 ========================= */
 function recalc(){
-  const scale = getScale();
-  const varName = document.getElementById("selVar").value;
-  const reducer = chooseReducer(varName);
-  const tab = state.activeTab;
+  const scale=getScale();
+  const varName=document.getElementById("selVar").value;
 
   updateVarDesc();
-  updateKPI(scale, varName);
+  updateKPI(scale,varName);
 
-  const tablePane = document.getElementById("tablePane");
-  const plotDiv = document.getElementById("plot");
+  const tab=state.activeTab;
+  const plotDiv=document.getElementById("plot");
+  const tablePane=document.getElementById("tablePane");
 
   if(tab==="ts"){
     tablePane.classList.add("hidden");
     plotDiv.classList.remove("hidden");
-    plotTimeSeries(scale, varName, reducer);
-    setStatus(`Série temporal • ${scale} • ${VAR_META[varName].label}`);
-  } else if(tab==="box"){
-    // boxplot somente mensal
-    if(scale!=="monthly"){
-      setStatus("Boxplot só está disponível em escala mensal.");
-      document.getElementById("selScale").value = "monthly";
-    }
+    plotTimeSeries(scale,varName);
+    setStatus("Série temporal pronta.", "good");
+  }else if(tab==="box"){
+    // força mensal
+    if(scale!=="monthly"){ document.getElementById("selScale").value="monthly"; }
     tablePane.classList.add("hidden");
     plotDiv.classList.remove("hidden");
     plotBoxplotMonthly(varName);
-    setStatus(`Boxplot mensal • ${VAR_META[varName].label}`);
-  } else if(tab==="scatter"){
+    setStatus("Boxplot mensal pronto.", "good");
+  }else if(tab==="scatter"){
     tablePane.classList.add("hidden");
     plotDiv.classList.remove("hidden");
-    const xVar = document.getElementById("selX").value;
-    const yVar = document.getElementById("selY").value;
-    const lag = parseInt(document.getElementById("selLag").value,10) || 0;
-    plotScatter(scale, xVar, yVar, lag);
-  } else if(tab==="table"){
+    const xVar=document.getElementById("selX").value;
+    const yVar=document.getElementById("selY").value;
+    const lag=parseInt(document.getElementById("selLag").value,10)||0;
+    plotScatter(getScale(), xVar, yVar, lag);
+  }else if(tab==="table"){
     plotDiv.classList.add("hidden");
     tablePane.classList.remove("hidden");
-    renderTable(scale, varName);
+    renderTable(scale,varName);
   }
 }
 
 function setActiveTab(tab){
-  state.activeTab = tab;
+  state.activeTab=tab;
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
   recalc();
 }
@@ -911,67 +803,19 @@ function setActiveTab(tab){
    Export + PNG
 ========================= */
 function exportSelectionCSV(){
-  const scale = getScale();
-  const varName = document.getElementById("selVar").value;
-  const cities = getSelectedCities();
-
-  const rowsOut = [];
-  for(const c of cities){
-    const rows = (state.datasets[c]||[]).filter(r=>r.scale===scale).sort((a,b)=>a.__dt-b.__dt);
-    for(const r of rows){
-      rowsOut.push({city:c, scale, period:r.period, [varName]: r[varName]});
-    }
-  }
-
-  const csv = Papa.unparse(rowsOut);
-  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `PLAC_${scale}_${varName}.csv`;
+  const scale=getScale();
+  const varName=document.getElementById("selVar").value;
+  const rows=filterRows(scale).map(r=>({scale, period:r.period, [varName]: r[varName]}));
+  const csv=Papa.unparse(rows);
+  const blob=new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`PLAC_Caceres_${scale}_${varName}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
-
 function savePNG(){
   Plotly.downloadImage("plot", {format:"png", filename:"PLAC_Caceres_grafico", scale:2});
-}
-
-/* =========================
-   Upload city (same format)
-========================= */
-async function loadFileAsText(file){
-  const name = file.name.toLowerCase();
-  if(name.endsWith(".gz") || name.endsWith(".csv.gz")){
-    const buf = await file.arrayBuffer();
-    const decompressed = window.pako.ungzip(new Uint8Array(buf));
-    return new TextDecoder("utf-8").decode(decompressed);
-  }
-  return await file.text();
-}
-
-async function addCityFromFile(file){
-  const text = await loadFileAsText(file);
-  const cityName = prompt("Nome do município (como deve aparecer no painel):", file.name.replace(/\.(csv|gz|csv\.gz)$/i,""));
-  if(!cityName) return;
-
-  setSpinner(true, `Carregando ${cityName}…`);
-  await loadCityFromCSVText(cityName, text);
-  buildCitySelect();
-  buildVarSelects();
-  setSpinner(false);
-  setStatus(`Município adicionado: ${cityName}`);
-  recalc();
-}
-
-function removeSelectedCities(){
-  const sel = document.getElementById("selCities");
-  const cities = [...sel.selectedOptions].map(o=>o.value);
-  for(const c of cities){
-    if(c===DEFAULT_CITY) continue;
-    delete state.datasets[c];
-  }
-  buildCitySelect();
-  recalc();
 }
 
 /* =========================
@@ -979,24 +823,37 @@ function removeSelectedCities(){
 ========================= */
 async function init(){
   try{
-    setSpinner(true, "Carregando Cáceres (mensal+anual)…");
+    setSpinner(true,"Baixando CSV compactado…");
+    setStatus("Iniciando…", "info");
 
     const text = await loadGzText(DATA_URL);
-    await loadCityFromCSVText(DEFAULT_CITY, text);
 
-    buildCitySelect();
+    setSpinner(true,"Lendo CSV…");
+    const parsed = Papa.parse(text, {header:true, dynamicTyping:true, skipEmptyLines:true});
+    const rows = parsed.data || [];
+    if(!rows.length) throw new Error("CSV sem linhas válidas.");
+
+    // preparar datas
+    for(const r of rows){
+      r.period = String(r.period);
+      r.scale = String(r.scale);
+      if(r.scale==="monthly"){
+        r.__dt = new Date(r.period + "-01T00:00:00");
+      }else{
+        r.__dt = new Date(r.period + "-01-01T00:00:00");
+      }
+    }
+
+    state.rows = rows;
+
+    // vars disponíveis = interseção VAR_META com colunas do CSV
+    const cols = Object.keys(rows[0]);
+    state.vars = Object.keys(VAR_META).filter(v=>cols.includes(v));
+    if(!state.vars.length) throw new Error("Nenhuma variável do dicionário encontrada no CSV.");
+
     buildVarSelects();
 
-    // defaults bons para comunicação pública
-    document.getElementById("selScale").value = "monthly";
-    document.getElementById("selVar").value = "temperature_2m";
-    document.getElementById("selX").value = "temperature_2m";
-    document.getElementById("selY").value = "total_precipitation_sum";
-
-    setSpinner(false);
-
     // listeners
-    document.getElementById("selCities").addEventListener("change", recalc);
     document.getElementById("selScale").addEventListener("change", recalc);
     document.getElementById("selVar").addEventListener("change", recalc);
     document.getElementById("selReducer").addEventListener("change", recalc);
@@ -1010,37 +867,26 @@ async function init(){
 
     document.getElementById("btnExportCSV").addEventListener("click", exportSelectionCSV);
     document.getElementById("btnSavePNG").addEventListener("click", savePNG);
-
     document.getElementById("btnReset").addEventListener("click", ()=>{
-      document.getElementById("selScale").value = "monthly";
-      document.getElementById("selReducer").value = "auto";
+      document.getElementById("selScale").value="monthly";
+      document.getElementById("selReducer").value="auto";
       setActiveTab("ts");
-      setStatus("Reset aplicado.");
-      recalc();
+      setStatus("Reset aplicado.", "good");
     });
 
-    document.getElementById("btnRemoveCity").addEventListener("click", removeSelectedCities);
-
-    document.getElementById("fileCity").addEventListener("change", async (e)=>{
-      const f = e.target.files?.[0];
-      if(!f) return;
-      try{ await addCityFromFile(f); }
-      catch(err){ console.error(err); alert("Falha ao adicionar município: " + err.message); }
-      finally{ e.target.value = ""; }
-    });
-
-    // first draw
+    setSpinner(false);
+    setStatus("Dados carregados. Escolha variáveis e explore.", "good");
     recalc();
-    setStatus("Dados carregados. Selecione variáveis e explore tendências/comparações.");
 
   }catch(err){
     console.error(err);
-    alert("Erro ao iniciar o painel: " + err.message);
+    setSpinner(false);
+    // sem alert (não trava a tela)
+    setStatus("Erro: " + err.message + " • Confira se o arquivo existe em /data e o nome bate 100%.", "bad");
   }
 }
 
 init();
 </script>
-
 </body>
 </html>
