@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PLAC Cáceres — Painel Climático (Mensal/Anual)</title>
+  <title>Clima Cáceres — Plataforma Científica e Educacional</title>
 
   <!-- Libs -->
   <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
@@ -240,8 +240,8 @@
       <div class="brand">
         <div class="logo"></div>
         <div class="title-wrap">
-          <div class="title">PLAC Cáceres — Painel Climático (Mensal/Anual)</div>
-          <div class="subtitle">Dados + estatística + gráficos claros para decisão pública (Cáceres/MT)</div>
+          <div class="title">Clima Cáceres</div>
+          <div class="subtitle">Plataforma científica e educacional para monitoramento climático e ambiental</div>
         </div>
       </div>
 
@@ -263,7 +263,8 @@
           <strong>Objetivo:</strong> permitir que qualquer pessoa (leiga ou técnica) veja <strong>tendência</strong>,
           <strong>sazonalidade</strong>, <strong>variabilidade</strong> e <strong>relações entre variáveis</strong>,
           com estatística transparente e exportável.<br><br>
-          <strong>Organizador:</strong> Ernandes Sobreira Oliveira Junior (uso educacional e políticas públicas).
+          <strong>Desenvolvido por:</strong> Wilkinson Kiwi Lopes Lázaro, Claumir Cesar Muniz e Ernandes Sobreira — 2026.<br>
+          <span style="opacity:.75">Educação climática · Ciência ambiental · Pantanal · Monitoramento climático · Análise científica</span>
         </div>
 
         <label>Escala</label>
@@ -1240,7 +1241,7 @@ function bindEvents(){
       const dataUrl = await Plotly.toImage(divId, {format:"png", width:1400, height:850, scale:2});
       const a = document.createElement("a");
       a.href = dataUrl;
-      a.download = `PLAC_Caceres_${divId}.png`;
+      a.download = `ClimaCaceres_${divId}.png`;
       a.click();
     }catch(err){
       alert("Não consegui salvar PNG. Tente novamente.");
